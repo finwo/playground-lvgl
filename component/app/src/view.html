@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf8" />
+    <title>LVGL Playground</title>
+  </head>
+  <body>
+    "Hello World" is a common test-string within programming<br/>
+    <br/>
+    <div>
+      Current window size: <span id="width"></span>x<span id="height"></span>
+    </div>
+    <script>
+      function handleResize() {
+        document.querySelector('#width').innerText = window.innerWidth;
+        document.querySelector('#height').innerText = window.innerHeight;
+      }
+      handleResize();
+      addEventListener("resize", handleResize)
+    </script>
+  </body>
+</html>
