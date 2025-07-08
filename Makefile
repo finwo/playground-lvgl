@@ -18,7 +18,7 @@ component/app/lib/.dep/config.mk:
 
 $(BIN): ${BIN2C} component/app/lib/.dep/config.mk
 	${MAKE} --directory "component/app" BIN2C=${BIN2C} -j
-	mv --force "component/app/build/$@" "$@"
+	mv --force "component/app/$@" "$@"
 
 .PHONY: clean
 clean:
