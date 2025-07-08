@@ -3,17 +3,41 @@
   <head>
     <meta charset="utf8" />
     <title>LVGL Playground</title>
+    <style>
+      #disp {
+        position: fixed;
+        top     : 0;
+        left    : 0;
+      }
+    </style>
   </head>
   <body>
-    "Hello World" is a common test-string within programming<br/>
-    <br/>
-    <div>
-      Current window size: <span id="width"></span>x<span id="height"></span>
-    </div>
+    <canvas width="960" height="640" id="disp"></canvas>
     <script>
+      setTimeout(window._ready,1);
+
+      function updateBackground(col) {
+        document.body.style.background = col;
+      }
+      function updateDisplay(x1, y1, x2, y2, px_buf) {
+        if (x1 < 0) return;
+        if (y1 < 0) return;
+        if (x2 >= disp.width) return;
+        if (y2 >= disp.height) return;
+        const ctx = disp.getContext('2d');
+        const imgData = ctx.getImageData(x1, y1, x2-x1+1, y2-y1+1);
+        for(let i = 0; i<px_buf.length; i++) {
+          imgData.data[(i*4)+0] = px_buf[(i*3)+0];
+          imgData.data[(i*4)+1] = px_buf[(i*3)+1]
+          imgData.data[(i*4)+2] = px_buf[(i*3)+2]
+          imgData.data[(i*4)+3] = 255;
+        }
+        ctx.putImageData(imgData, x1, y1);
+      }
       function handleResize() {
-        document.querySelector('#width').innerText = window.innerWidth;
-        document.querySelector('#height').innerText = window.innerHeight;
+        _updateResolution(window.innerWidth, window.innerHeight);
+        disp.width  = window.innerWidth;
+        disp.height = window.innerHeight;
       }
       handleResize();
       addEventListener("resize", handleResize)

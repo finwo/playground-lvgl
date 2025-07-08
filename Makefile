@@ -28,9 +28,4 @@ clean:
 
 .PHONY: sterile
 sterile: clean
-	rm -rf
-	rm -rf tool/client-jerry/node_modules
-	rm -rf tool/conrol-ui/node_modules
-	rm -rf tool/oauth2-callback/node_modules
-	rm -rf tool/overlay-chat/node_modules
-	rm -rf tool/overlay-shoutout/node_modules
+	rm -rf "component/app/lib"

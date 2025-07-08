@@ -15,7 +15,7 @@ SRC+=$(wildcard src/*.c)
 INCLUDES:=
 
 override CFLAGS?=-Wall -O2
-override CFLAGS+=-I src
+override CFLAGS+=-I src -DDLV_CONF_INCLUDE_SIMPLE
 override LDFLAGS?=
 
 override CPPFLAGS?=
@@ -66,6 +66,8 @@ endif
 
 include lib/.dep/config.mk
 
+SRC+=$(CSRCS)
+
 OBJ:=$(SRC:.c=.o)
 OBJ:=$(OBJ:.cc=.o)
 
@@ -77,6 +79,8 @@ endif
 override CFLAGS+=$(INCLUDES)
 override CPPFLAGS+=$(INCLUDES)
 override CPPFLAGS+=$(CFLAGS)
+
+override CFLAGS+=-DLV_USE_LABEL
 
 htmltools:=
 htmltools+=src/view.html
