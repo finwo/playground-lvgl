@@ -3,3 +3,4 @@
 /playground-lvgl
 /.cache/
 /compile_commands.json
+/build/
