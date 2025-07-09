@@ -14,6 +14,7 @@ CC:=clang
 CPP:=clang
 
 SRC+=$(wildcard src/*.c)
+SRC+=$(wildcard src/*/*.c)
 
 override CFLAGS?=-Wall -O2
 override CFLAGS+=-I src -DDLV_CONF_INCLUDE_SIMPLE
