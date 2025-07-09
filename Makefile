@@ -20,7 +20,9 @@ override CFLAGS+=-I src -DDLV_CONF_INCLUDE_SIMPLE
 override LDFLAGS?=
 override CPPFLAGS?=
 
-override CFLAGS+=-D WEBVIEW_STATIC
+override LDFLAGS+=-lSDL2
+
+# override CFLAGS+=-D WEBVIEW_STATIC
 # override CFLAGS+=-D WINTERM
 
 ifeq ($(OS),Windows_NT)
@@ -80,22 +82,22 @@ override CPPFLAGS+=$(CFLAGS)
 
 override CFLAGS+=-DLV_USE_LABEL
 
-includeHtmlFiles:=
-includeHtmlFiles+=src/view.html
-includeHtmlHeaders:=$(includeHtmlFiles:.html=.h)
+# includeHtmlFiles:=
+# includeHtmlFiles+=src/view.html
+# includeHtmlHeaders:=$(includeHtmlFiles:.html=.h)
 
 .PHONY: default
 default: $(BIN)
 
-$(OBJ): $(includeHtmlHeaders)
+$(OBJ): # $(includeHtmlHeaders)
 
 .PHONY: bin2c
 bin2c: ${BIN2C}
 ${BIN2C}:
 	${MAKE} --directory "$(shell dirname "${BIN2C}")"
 
-$(includeHtmlHeaders): $(includeHtmlFiles)
-	${BIN2C} < $(@:.h=.html) > $@
+# $(includeHtmlHeaders): ${BIN2C} $(includeHtmlFiles)
+# 	${BIN2C} < $(@:.h=.html) > $@
 
 component/app/lib/.dep/config.mk:
 	bash -c "cd component/app && dep i"
@@ -113,6 +115,5 @@ $(BIN): $(OBJ)
 clean:
 	rm -rf ${BIN2C}
 	rm -rf ${OBJ}
-	rm -rf ${includeHtmlHeaders}
+	# rm -rf ${includeHtmlHeaders}
 	${MAKE} --directory "$(shell dirname "${BIN2C}")" clean
-	${MAKE} --directory "component/app" clean
