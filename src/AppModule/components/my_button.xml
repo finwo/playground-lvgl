@@ -1,0 +1,19 @@
+<!-- red_button.xml -->
+<component>
+    <api>
+        <prop type="string" name="btn_text" default="None"/>
+    </api>
+
+    <consts>
+        <int name="thin" value="2"/>
+    </consts>
+
+    <styles>
+        <style name="always" />
+    </styles>
+
+    <view extends="lv_button" style_radius="0" style_bg_color="0xf72362">
+        <lv_label text="Some text"/>
+        <lv_label text="$btn_text" y="40"/>
+    </view>
+</component>

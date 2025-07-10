@@ -225,7 +225,7 @@
     #endif
 
     /** Enable drawing complex gradients in software: linear at an angle, radial or conical */
-    #define LV_USE_DRAW_SW_COMPLEX_GRADIENTS    0
+    #define LV_USE_DRAW_SW_COMPLEX_GRADIENTS    1
 
 #endif
 
@@ -492,7 +492,7 @@
 #define LV_USE_OBJ_ID_BUILTIN   1
 
 /** Use obj property set/get API. */
-#define LV_USE_OBJ_PROPERTY 0
+#define LV_USE_OBJ_PROPERTY 1
 
 /** Enable property name support. */
 #define LV_USE_OBJ_PROPERTY_NAME 1
@@ -1154,7 +1154,7 @@
 #endif /*LV_USE_TEST*/
 
 /** Enable loading XML UIs runtime */
-#define LV_USE_XML    0
+#define LV_USE_XML    1
 
 /*1: Enable color filter style*/
 #define LV_USE_COLOR_FILTER     0

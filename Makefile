@@ -7,19 +7,26 @@ TARGET=${UNAME_SYSTEM}-${UNAME_MACHINE}
 
 BIN?=playground-lvgl
 
+DEPS:=
+DEPS+=$(wildcard src/*.c)
+DEPS+=$(wildcard src/*/*.c)
+DEPS+=$(wildcard src/*/components/*.xml)
+DEPS+=$(wildcard src/*/components/*/*.xml)
+DEPS+=$(wildcard target/${TARGET}/src/*.c)
+DEPS+=target/${TARGET}/src/lv_conf.h
 
 .PHONY: default
 default: ${BIN}
 
-build:
-	mkdir build
-	cp -rf src build/
-	cp -rf lib build/
-	cp -rf target/${TARGET}/* build/
+build: ${DEPS}
+	mkdir -p build
+	rsync -a src build/
+	rsync -a lib build/
+	rsync -a target/${TARGET}/* build/
 
 ${BIN}: build
 	${MAKE} --directory build/ -j
-	make build/playground-lvgl .
+	mv build/playground-lvgl .
 
 .PHONY: clean
 clean:
