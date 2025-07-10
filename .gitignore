@@ -1,5 +1,6 @@
 /lib/
 *.o
+.unison.*
 /playground-lvgl
 /.cache/
 /compile_commands.json

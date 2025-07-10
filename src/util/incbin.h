@@ -19,14 +19,14 @@
 // which is not really needed, feel free to change it to whatever you want/need
 #define INCBIN(name, file) \
     __asm__(".section " INCBIN_SECTION "\n" \
-            ".global " STR(name) "_start\n" \
+            ".global " USTR(name) "_start\n" \
             ".balign 16\n" \
-            STR(name) "_start:\n" \
+            USTR(name) "_start:\n" \
             ".incbin \"" file "\"\n" \
             \
             ".global " STR(name) "_end\n" \
             ".balign 1\n" \
-            STR(name) "_end:\n" \
+            USTR(name) "_end:\n" \
             ".byte 0\n" \
     ); \
     extern __attribute__((aligned(16))) const char name ## _start[]; \

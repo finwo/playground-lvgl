@@ -60,14 +60,12 @@ int appmodule_init() {
     return 1;
   }
 
-  // lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x2255AA), LV_PART_MAIN);
+  lv_xml_register_event_cb(NULL, "my_callback_1", appmodule_switch_screen);
 
+  // lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x2255AA), LV_PART_MAIN);
   lv_xml_component_register_from_data("my_button"   , component_my_button_start);
   lv_xml_component_register_from_data("screen_about", screen_about_start       );
   lv_xml_component_register_from_data("screen_main" , screen_main_start        );
-
-  printf("%s:%d\n\n--- BEGIN ABOUT ---\n%s\n--- END ---\n\n", __FILE__, __LINE__, screen_about_start);
-  printf("%s:%d\n\n--- BEGIN MAIN  ---\n%s\n--- END ---\n\n", __FILE__, __LINE__, screen_main_start);
 
   // /* Can be local */
   // const char * my_button_attrs[] = {
@@ -75,22 +73,12 @@ int appmodule_init() {
   //     NULL, NULL,
   // };
 
-  // printf("%s:%d\n", __FILE__, __LINE__);
-
   lv_obj_t * screen_main  = lv_xml_create(NULL, "screen_main", NULL);
   lv_obj_add_event_cb(screen_main, appmodule_main_screen_events, LV_EVENT_CLICKED | LV_EVENT_PRESSED, NULL);
-
-  // lv_obj_t * screen_about = lv_xml_create(NULL, "screen_about", NULL);
-  // lv_obj_t * screen_main = lv_obj_create(NULL);
   lv_scr_load(screen_main);
-  lv_xml_register_event_cb(NULL, "my_callback_1", appmodule_switch_screen);
-
-  // printf("%s:%d\n", __FILE__, __LINE__);
 
   // lv_obj_t * my_button = lv_xml_create(lv_screen_active(), "my_button", my_button_attrs);
   // lv_obj_align(my_button, LV_ALIGN_CENTER, 0, 0);
-
-  // printf("%s:%d\n", __FILE__, __LINE__);
 
   // // lv_prop_id_t  btnTextId      = lv_obj_property_get_id(my_button, "btn_text");
   // lv_property_t my_button_prop = {
@@ -106,10 +94,6 @@ int appmodule_init() {
   // my_button_prop
 
   // lv_result_t result = lv_obj_set_property(my_button, &my_button_prop);
-
-  // // // printf("Result: %d\n", result);
-  // printf("text : %d\n", my_button_prop.id);
-  // printf("pizza: %d\n", lv_obj_property_get_id(my_button, "btn_text"));
 
   // /*Create widgets*/
   // lv_obj_t * label = lv_label_create(lv_screen_active());
