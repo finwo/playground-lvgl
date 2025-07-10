@@ -85,20 +85,21 @@ override CFLAGS+=-DLV_USE_LABEL
 
 includeXmlFiles:=
 includeXmlFiles+=$(wildcard src/*/components/*.xml)
-includeXmlHeaders:=$(includeXmlFiles:.xml=.h)
+includeXmlFiles+=$(wildcard src/*/screens/*.xml)
+# includeXmlHeaders:=$(includeXmlFiles:.xml=.h)
 
 .PHONY: default
 default: $(BIN)
 
-$(OBJ): $(includeXmlHeaders)
+$(OBJ): $(includeXmlFiles)
 
-.PHONY: bin2c
-bin2c: ${BIN2C}
-${BIN2C}:
-	${MAKE} --directory "$(shell dirname "${BIN2C}")"
+# .PHONY: bin2c
+# bin2c: ${BIN2C}
+# ${BIN2C}:
+# 	${MAKE} --directory "$(shell dirname "${BIN2C}")"
 
-$(includeXmlHeaders): ${BIN2C} $(includeXmlFiles)
-	${BIN2C} < $(@:.h=.xml) > $@
+# $(includeXmlHeaders): ${BIN2C} $(includeXmlFiles)
+# 	${BIN2C} < $(@:.h=.xml) > $@
 
 component/app/lib/.dep/config.mk:
 	bash -c "cd component/app && dep i"

@@ -1,0 +1,8 @@
+<screen>
+   <view style_bg_color="0xAA2222">
+      <lv_button>
+         <lv_label text="Back"/>
+         <screen_load_event screen="screen_main" anim_type="out_right" duration="300" />
+      </lv_button>
+   </view>
+</screen>

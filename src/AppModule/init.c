@@ -1,7 +1,13 @@
+#include "lvgl/src/misc/lv_event.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "lvgl/src/core/lv_obj_property.h"
 #include "lvgl/src/misc/lv_area.h"
 #include "lvgl/src/misc/lv_types.h"
 #include "lvgl/src/widgets/label/lv_label.h"
+
 #include <stdio.h>
 
 #ifdef _WIN32
@@ -11,10 +17,26 @@
 // #include <unistd.h>
 #endif
 
+
 #include "lvgl/lvgl.h"
 #include "rxi/log.h"
 
 #include "AppModule/init.h"
+#include "util/incbin.h"
+
+INCBIN(component_my_button, "AppModule/components/my_button.xml");
+INCBIN(screen_main        , "AppModule/screens/main.xml"        );
+INCBIN(screen_about       , "AppModule/screens/about.xml"       );
+
+static void appmodule_switch_screen(lv_event_t * e) {
+  printf("switch_screen called\n");
+}
+
+static void appmodule_main_screen_events(lv_event_t * e) {
+  lv_event_code_t event_code = lv_event_get_code(e);
+  printf("Event! %d\n", event_code);
+}
+
 
 int appmodule_init() {
   const char *loglevel = "trace";
@@ -38,21 +60,37 @@ int appmodule_init() {
     return 1;
   }
 
-  lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x2255AA), LV_PART_MAIN);
+  // lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x2255AA), LV_PART_MAIN);
 
-  lv_xml_component_register_from_data("my_button",
-#include "AppModule/components/my_button.h"
-  );
+  lv_xml_component_register_from_data("my_button"   , component_my_button_start);
+  lv_xml_component_register_from_data("screen_about", screen_about_start       );
+  lv_xml_component_register_from_data("screen_main" , screen_main_start        );
 
-  /* Can be local */
-  const char * my_button_attrs[] = {
-      "btn_text", "calzone",
-      NULL, NULL,
-  };
+  printf("%s:%d\n\n--- BEGIN ABOUT ---\n%s\n--- END ---\n\n", __FILE__, __LINE__, screen_about_start);
+  printf("%s:%d\n\n--- BEGIN MAIN  ---\n%s\n--- END ---\n\n", __FILE__, __LINE__, screen_main_start);
 
+  // /* Can be local */
+  // const char * my_button_attrs[] = {
+  //     "btn_text", "calzone",
+  //     NULL, NULL,
+  // };
 
-  lv_obj_t * my_button = lv_xml_create(lv_screen_active(), "my_button", my_button_attrs);
-  lv_obj_align(my_button, LV_ALIGN_CENTER, 0, 0);
+  // printf("%s:%d\n", __FILE__, __LINE__);
+
+  lv_obj_t * screen_main  = lv_xml_create(NULL, "screen_main", NULL);
+  lv_obj_add_event_cb(screen_main, appmodule_main_screen_events, LV_EVENT_CLICKED | LV_EVENT_PRESSED, NULL);
+
+  // lv_obj_t * screen_about = lv_xml_create(NULL, "screen_about", NULL);
+  // lv_obj_t * screen_main = lv_obj_create(NULL);
+  lv_scr_load(screen_main);
+  lv_xml_register_event_cb(NULL, "my_callback_1", appmodule_switch_screen);
+
+  // printf("%s:%d\n", __FILE__, __LINE__);
+
+  // lv_obj_t * my_button = lv_xml_create(lv_screen_active(), "my_button", my_button_attrs);
+  // lv_obj_align(my_button, LV_ALIGN_CENTER, 0, 0);
+
+  // printf("%s:%d\n", __FILE__, __LINE__);
 
   // // lv_prop_id_t  btnTextId      = lv_obj_property_get_id(my_button, "btn_text");
   // lv_property_t my_button_prop = {
@@ -81,3 +119,7 @@ int appmodule_init() {
 
   return 0;
 }
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
