@@ -8,8 +8,6 @@ INCLUDES:=
 UNAME_MACHINE=$(call lc,$(shell uname -m))
 UNAME_SYSTEM=$(call lc,$(shell uname -s))
 
-BIN2C:=../tool/bin2c/bin2c-${UNAME_SYSTEM}-${UNAME_MACHINE}
-
 CC:=clang
 CPP:=clang
 
@@ -87,20 +85,11 @@ override CFLAGS+=-DLV_USE_LABEL
 includeXmlFiles:=
 includeXmlFiles+=$(wildcard src/*/components/*.xml)
 includeXmlFiles+=$(wildcard src/*/screens/*.xml)
-# includeXmlHeaders:=$(includeXmlFiles:.xml=.h)
 
 .PHONY: default
 default: $(BIN)
 
 $(OBJ): $(includeXmlFiles)
-
-# .PHONY: bin2c
-# bin2c: ${BIN2C}
-# ${BIN2C}:
-# 	${MAKE} --directory "$(shell dirname "${BIN2C}")"
-
-# $(includeXmlHeaders): ${BIN2C} $(includeXmlFiles)
-# 	${BIN2C} < $(@:.h=.xml) > $@
 
 component/app/lib/.dep/config.mk:
 	bash -c "cd component/app && dep i"
@@ -116,7 +105,5 @@ $(BIN): $(OBJ)
 
 .PHONY: clean
 clean:
-	rm -rf ${BIN2C}
 	rm -rf ${OBJ}
 	rm -rf ${includeHeaders}
-	${MAKE} --directory "$(shell dirname "${BIN2C}")" clean
