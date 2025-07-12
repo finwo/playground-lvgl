@@ -1,12 +1,17 @@
-#include "lvgl/src/misc/lv_event.h"
+#include "lvgl/lvgl.h"
+#include "lvgl/src/draw/lv_image_dsc.h"
+#include "lvgl/src/misc/lv_types.h"
+#include "lvgl/src/draw/lv_image_decoder.h"
+#include "lvgl/src/draw/lv_image_decoder_private.h"
+
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "lvgl/src/core/lv_obj_property.h"
-#include "lvgl/src/misc/lv_area.h"
-#include "lvgl/src/misc/lv_types.h"
-#include "lvgl/src/widgets/label/lv_label.h"
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
 
 #include <stdio.h>
 
@@ -17,8 +22,6 @@ extern "C" {
 // #include <unistd.h>
 #endif
 
-
-#include "lvgl/lvgl.h"
 #include "rxi/log.h"
 
 #include "AppModule/init.h"
@@ -27,6 +30,14 @@ extern "C" {
 INCBIN(component_my_button, "AppModule/components/my_button.xml");
 INCBIN(screen_main        , "AppModule/screens/main.xml"        );
 INCBIN(screen_about       , "AppModule/screens/about.xml"       );
+
+INCBIN(img_cloud         , "AppModule/assets/2x-cloud.png");
+INCBIN(img_horizon       , "AppModule/assets/2x-horizon.png");
+INCBIN(img_obstacle_large, "AppModule/assets/2x-obstacle-large.png");
+INCBIN(img_obstacle_small, "AppModule/assets/2x-obstacle-small.png");
+INCBIN(img_restart       , "AppModule/assets/2x-restart.png");
+INCBIN(img_text          , "AppModule/assets/2x-text.png");
+INCBIN(img_trex          , "AppModule/assets/2x-trex.png");
 
 static void appmodule_switch_screen(lv_event_t * e) {
   printf("switch_screen called\n");
@@ -60,46 +71,89 @@ int appmodule_init() {
     return 1;
   }
 
-  lv_xml_register_event_cb(NULL, "my_callback_1", appmodule_switch_screen);
-
-  // lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x2255AA), LV_PART_MAIN);
-  lv_xml_component_register_from_data("my_button"   , component_my_button_start);
-  lv_xml_component_register_from_data("screen_about", screen_about_start       );
-  lv_xml_component_register_from_data("screen_main" , screen_main_start        );
-
-  // /* Can be local */
-  // const char * my_button_attrs[] = {
-  //     "btn_text", "calzone",
-  //     NULL, NULL,
+  // // Write our assets to ramdisk
+  // // Allows us to reference them without carrying the decoded data everywhere
+  // const char *assets[] = {
+  //   "assets/cloud.png"         , img_cloud_start         , img_cloud_end         ,
+  //   "assets/horizon.png"       , img_horizon_start       , img_horizon_end       ,
+  //   "assets/obstacle-large.png", img_obstacle_large_start, img_obstacle_large_end,
+  //   "assets/obstacle-small.png", img_obstacle_small_start, img_obstacle_small_end,
+  //   "assets/restart.png"       , img_restart_start       , img_restart_end       ,
+  //   "assets/text.png"          , img_text_start          , img_text_end          ,
+  //   "assets/trex.png"          , img_trex_start          , img_trex_end          ,
+  //   NULL,
   // };
+  // lfs_mkdir(&lfs, "assets");
+  // for(int i = 0; assets[i]; i+=3) {
+  //   lfs_file_open(&lfs, &file, assets[i], LFS_O_RDWR | LFS_O_CREAT);
+  //   lfs_file_write(&lfs, &file, assets[i+1], assets[i+2] - assets[i+1]);
+  //   lfs_file_close(&lfs, &file);
+  // }
+
+  struct local_asset {
+    char *name;
+    char *start;
+    char *end;
+    int   sprites;
+    lv_image_dsc_t *dsc;
+  };
+
+  lv_image_dsc_t loader_dsc = {};
+  lv_result_t res;
+  lv_image_decoder_dsc_t dsc;
+  struct local_asset assets[] = {
+    { .name = "assets/cloud.png"         , .start = img_cloud_start         , .end = img_cloud_end         , .sprites = 1, },
+    { .name = "assets/horizon.png"       , .start = img_horizon_start       , .end = img_horizon_end       , .sprites = 1, },
+    { .name = "assets/obstacle_large.png", .start = img_obstacle_large_start, .end = img_obstacle_large_end, .sprites = 3, },
+    { .name = "assets/obstacle_small.png", .start = img_obstacle_small_start, .end = img_obstacle_small_end, .sprites = 6, },
+    { .name = "assets/restart.png"       , .start = img_restart_start       , .end = img_restart_end       , .sprites = 1, },
+    { .name = "assets/text.png"          , .start = img_text_start          , .end = img_text_end          , .sprites = 1, },
+    { .name = "assets/trex.png"          , .start = img_trex_start          , .end = img_trex_end          , .sprites = 6, },
+    { .name = NULL, },
+  };
+  for(int i = 0; assets[i].name; i++) {
+    loader_dsc.data      = assets[i].start;
+    loader_dsc.data_size = assets[i].end - assets[i].start;
+    lv_image_decoder_open(&dsc, &loader_dsc, NULL);
+    assets[i].dsc = dsc.decoded;
+  }
+
+  // test_dsc.data = img_obstacle_small_start;
+  // test_dsc.data_size = img_obstacle_small_end - img_obstacle_small_start;
+  // lv_image_decoder_open(&dsc, &test_dsc, &args);
+  // width_obstacle_small = dsc.decoded->header.w / sprites_obstacle_small;
+  // lv_image_decoder_close(&dsc);
+
+  // test_dsc.data = img_trex_start;
+  // test_dsc.data_size = img_trex_end - img_trex_start;
+  // lv_image_decoder_open(&dsc, &test_dsc, &args);
+  // width_trex = dsc.decoded->header.w / sprites_trex;
+  // lv_image_decoder_close(&dsc);
+
+  // printf("large size: %d\n", width_obstacle_large);
+  // printf("small size: %d\n", width_obstacle_small);
+  // printf("trex size : %d\n", width_trex);
+
+  for(int i = 0; assets[i].name; i++) {
+    printf("[%*s] %*d / %d = %*d\n", 25, assets[i].name, 4, assets[i].dsc->header.w, assets[i].sprites, 4, assets[i].dsc->header.w / assets[i].sprites);
+  }
+  exit(0);
+
+  // lv_xml_register_event_cb(NULL, "my_callback_1", appmodule_switch_screen);
+
+  lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x2255AA), LV_PART_MAIN);
+  // lv_xml_component_register_from_data("my_button"   , component_my_button_start);
+  // lv_xml_component_register_from_data("screen_about", screen_about_start       );
+  lv_xml_component_register_from_data("screen_main" , screen_main_start        );
 
   lv_obj_t * screen_main  = lv_xml_create(NULL, "screen_main", NULL);
   lv_obj_add_event_cb(screen_main, appmodule_main_screen_events, LV_EVENT_CLICKED | LV_EVENT_PRESSED, NULL);
   lv_scr_load(screen_main);
 
-  // lv_obj_t * my_button = lv_xml_create(lv_screen_active(), "my_button", my_button_attrs);
-  // lv_obj_align(my_button, LV_ALIGN_CENTER, 0, 0);
 
-  // // lv_prop_id_t  btnTextId      = lv_obj_property_get_id(my_button, "btn_text");
-  // lv_property_t my_button_prop = {
-  //   .id = lv_obj_property_get_id(my_button, "btn_text"),
-  // };
 
-  // lv_obj_t * lv_label_0 = lv_label_create(my_button);
-  // lv_label_set_text(lv_label_0, "calzone");
-  // lv_obj_set_align(lv_label_0, LV_ALIGN_TOP_LEFT);
 
-  // my_button_prop.ptr = "Click me!";
-  // my_button_prop.id  = btnTextId;
-  // my_button_prop
 
-  // lv_result_t result = lv_obj_set_property(my_button, &my_button_prop);
-
-  // /*Create widgets*/
-  // lv_obj_t * label = lv_label_create(lv_screen_active());
-  // lv_label_set_text(label, "Hello from LVGL!");
-  // lv_obj_set_style_text_color(lv_screen_active(), lv_color_hex(0xffffff), LV_PART_MAIN);
-  // lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 
   return 0;
 }

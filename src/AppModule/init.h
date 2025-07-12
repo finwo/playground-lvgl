@@ -2,6 +2,10 @@
 #define __APP_MAIN_H__
 
 #include "lvgl/lvgl.h"
+// #include "lfs.h"
+
+// extern lfs_t      lfs;
+// extern lfs_file_t file;
 
 extern lv_display_t *lvDisplay;
 extern lv_indev_t *lvMouse;

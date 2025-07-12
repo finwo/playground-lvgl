@@ -1,12 +1,19 @@
 <screen>
-   <view style_bg_color="0x003a57" layout="flex">
-      <lv_button x="10" y="10">
-         <lv_label text="About"/>
-         <screen_create_event screen="screen_about" anim_type="over_left" duration="300" />
-      </lv_button>
-      <lv_button x="10" y="60">
-         <lv_label text="CB?"/>
-         <event_cb callback="my_callback_1" trigger="clicked" user_data="some_text"/>
-      </lv_button>
-   </view>
+  <!-- <images> -->
+  <!--   <file name="trex.png" src_path="M:assets/1x-trex.png"/> -->
+  <!-- </images> -->
+  <view style_bg_color="0x003a57" layout="flex">
+    <!-- <style bg_opa="opa_cover"/> -->
+    <!-- </lv_image> -->
+
+    <!-- <lv_button x="10" y="10"> -->
+    <!--    <lv_label text="About"/> -->
+    <!--    <screen_create_event screen="screen_about" anim_type="over_left" duration="300" /> -->
+    <!-- </lv_button> -->
+    <!-- <lv_button x="10" y="80"> -->
+    <!--    <lv_label text="CB?"/> -->
+    <!--    <event_cb callback="my_callback_1" trigger="clicked" user_data="some_text"/> -->
+    <!-- </lv_button> -->
+
+  </view>
 </screen>

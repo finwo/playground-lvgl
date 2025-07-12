@@ -19,7 +19,7 @@ override CFLAGS+=-I src -DDLV_CONF_INCLUDE_SIMPLE
 override LDFLAGS?=
 override CPPFLAGS?=
 
-override LDFLAGS+=-lSDL2
+override LDFLAGS+=$(shell pkg-config --libs sdl2)
 
 # override CFLAGS+=-D WEBVIEW_STATIC
 # override CFLAGS+=-D WINTERM
