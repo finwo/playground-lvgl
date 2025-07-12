@@ -1,3 +1,5 @@
+#include "lvgl/src/drivers/sdl/lv_sdl_window.h"
+#include "lvgl/src/libs/lodepng/lv_lodepng.h"
 #include <stdint.h>
 
 #ifdef _WIN32
@@ -18,7 +20,7 @@
 // #include "lfs.h"
 // #include "bd/lfs_rambd.h"
 
-#include "AppModule/init.h"
+#include "AppModule/appmodule.h"
 
 #define SDL_HOR_RES 960
 #define SDL_VER_RES 640
@@ -27,6 +29,9 @@ lv_display_t *lvDisplay;
 lv_indev_t *lvMouse;
 lv_indev_t *lvMouseWheel;
 lv_indev_t *lvKeyboard;
+
+// lfs_t      lfs;
+// lfs_file_t file;
 
 #if LV_USE_LOG != 0
 static void lv_log_print_g_cb(lv_log_level_t level, const char * buf) {
@@ -106,7 +111,9 @@ int main() {
   lvMouseWheel = lv_sdl_mousewheel_create();
   lvKeyboard   = lv_sdl_keyboard_create();
 
-  if (appmodule_init()) {
+  lv_sdl_window_set_resizeable(lvDisplay, false);
+
+  if (appmodule_setup()) {
     log_fatal("Error setting up AppModule");
     return 1;
   }
@@ -115,6 +122,7 @@ int main() {
   while(1) {
     SDL_Delay(5);
     Uint32 current = SDL_GetTicks();
+    appmodule_loop(current - lastTick);
     lv_tick_inc(current - lastTick); // Update the tick timer. Tick is new for LVGL 9
     lastTick = current;
     lv_timer_handler(); // Update the UI-

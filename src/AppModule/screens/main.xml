@@ -1,8 +1,12 @@
-<screen>
+<screen scrollable="false">
   <!-- <images> -->
   <!--   <file name="trex.png" src_path="M:assets/1x-trex.png"/> -->
   <!-- </images> -->
-  <view style_bg_color="0x003a57" layout="flex">
+  <view style_bg_color="0x000000" layout="flex">
+
+    <lv_image name="trex" src="assets/trex.png" inner_align="top-left" />
+    <lv_image name="horizon" src="assets/horizon.png" x="0" y="400" width="960" inner_align="tile" />
+
     <!-- <style bg_opa="opa_cover"/> -->
     <!-- </lv_image> -->
 

@@ -1,10 +1,15 @@
 #include "lvgl/lvgl.h"
+#include "lvgl/src/core/lv_obj_pos.h"
 #include "lvgl/src/draw/lv_image_dsc.h"
+#include "lvgl/src/lv_api_map_v9_0.h"
 #include "lvgl/src/misc/lv_types.h"
 #include "lvgl/src/draw/lv_image_decoder.h"
 #include "lvgl/src/draw/lv_image_decoder_private.h"
+#include "lvgl/src/others/xml/lv_xml.h"
+#include "lvgl/src/widgets/image/lv_image.h"
 
 #include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,8 +29,11 @@ extern "C" {
 
 #include "rxi/log.h"
 
-#include "AppModule/init.h"
+#include "AppModule/appmodule.h"
 #include "util/incbin.h"
+
+lv_obj_t *screen_main;
+// lv_subject_t subj_horizon_offset;
 
 INCBIN(component_my_button, "AppModule/components/my_button.xml");
 INCBIN(screen_main        , "AppModule/screens/main.xml"        );
@@ -39,6 +47,17 @@ INCBIN(img_restart       , "AppModule/assets/2x-restart.png");
 INCBIN(img_text          , "AppModule/assets/2x-text.png");
 INCBIN(img_trex          , "AppModule/assets/2x-trex.png");
 
+struct appmodule_asset *appmodule_assets = (struct appmodule_asset[]){
+  { .name = "assets/cloud.png"         , .start = img_cloud_start         , .end = img_cloud_end         , .sprites = 1, .dump = false },
+  { .name = "assets/horizon.png"       , .start = img_horizon_start       , .end = img_horizon_end       , .sprites = 1, .dump = false },
+  { .name = "assets/obstacle_large.png", .start = img_obstacle_large_start, .end = img_obstacle_large_end, .sprites = 3, .dump = false },
+  { .name = "assets/obstacle_small.png", .start = img_obstacle_small_start, .end = img_obstacle_small_end, .sprites = 6, .dump = false },
+  { .name = "assets/restart.png"       , .start = img_restart_start       , .end = img_restart_end       , .sprites = 1, .dump = false },
+  { .name = "assets/text.png"          , .start = img_text_start          , .end = img_text_end          , .sprites = 1, .dump = false },
+  { .name = "assets/trex.png"          , .start = img_trex_start          , .end = img_trex_end          , .sprites = 6, .dump = false },
+  { .name = NULL, },
+};
+
 static void appmodule_switch_screen(lv_event_t * e) {
   printf("switch_screen called\n");
 }
@@ -48,8 +67,7 @@ static void appmodule_main_screen_events(lv_event_t * e) {
   printf("Event! %d\n", event_code);
 }
 
-
-int appmodule_init() {
+int appmodule_setup() {
   const char *loglevel = "trace";
 
   if (0) {
@@ -90,70 +108,61 @@ int appmodule_init() {
   //   lfs_file_close(&lfs, &file);
   // }
 
-  struct local_asset {
-    char *name;
-    char *start;
-    char *end;
-    int   sprites;
-    lv_image_dsc_t *dsc;
-  };
-
+  // Decompress png images into dsc structs
   lv_image_dsc_t loader_dsc = {};
-  lv_result_t res;
   lv_image_decoder_dsc_t dsc;
-  struct local_asset assets[] = {
-    { .name = "assets/cloud.png"         , .start = img_cloud_start         , .end = img_cloud_end         , .sprites = 1, },
-    { .name = "assets/horizon.png"       , .start = img_horizon_start       , .end = img_horizon_end       , .sprites = 1, },
-    { .name = "assets/obstacle_large.png", .start = img_obstacle_large_start, .end = img_obstacle_large_end, .sprites = 3, },
-    { .name = "assets/obstacle_small.png", .start = img_obstacle_small_start, .end = img_obstacle_small_end, .sprites = 6, },
-    { .name = "assets/restart.png"       , .start = img_restart_start       , .end = img_restart_end       , .sprites = 1, },
-    { .name = "assets/text.png"          , .start = img_text_start          , .end = img_text_end          , .sprites = 1, },
-    { .name = "assets/trex.png"          , .start = img_trex_start          , .end = img_trex_end          , .sprites = 6, },
-    { .name = NULL, },
-  };
-  for(int i = 0; assets[i].name; i++) {
-    loader_dsc.data      = assets[i].start;
-    loader_dsc.data_size = assets[i].end - assets[i].start;
+  for(int i = 0; appmodule_assets[i].name; i++) {
+    loader_dsc.data      = appmodule_assets[i].start;
+    loader_dsc.data_size = appmodule_assets[i].end - appmodule_assets[i].start;
     lv_image_decoder_open(&dsc, &loader_dsc, NULL);
-    assets[i].dsc = dsc.decoded;
+    appmodule_assets[i].dsc = dsc.decoded;
+    lv_xml_register_image(NULL, appmodule_assets[i].name, appmodule_assets[i].dsc);
+    if (appmodule_assets[i].dump) {
+      for(int j = 0; j < appmodule_assets[i].dsc->data_size; j++) {
+        printf("%.2x ", appmodule_assets[i].dsc->data[j]);
+        if (!(j%8)) printf("   ");
+        if (!(j%16)) printf("\n");
+      }
+    }
   }
 
-  // test_dsc.data = img_obstacle_small_start;
-  // test_dsc.data_size = img_obstacle_small_end - img_obstacle_small_start;
-  // lv_image_decoder_open(&dsc, &test_dsc, &args);
-  // width_obstacle_small = dsc.decoded->header.w / sprites_obstacle_small;
-  // lv_image_decoder_close(&dsc);
+  // // DEBUG: print sizes
+  // for(int i = 0; assets[i].name; i++) {
+  //   printf("[%*s] %*d / %d = %*d\n", 25, assets[i].name, 4, assets[i].dsc->header.w, assets[i].sprites, 4, assets[i].dsc->header.w / assets[i].sprites);
+  // }
 
-  // test_dsc.data = img_trex_start;
-  // test_dsc.data_size = img_trex_end - img_trex_start;
-  // lv_image_decoder_open(&dsc, &test_dsc, &args);
-  // width_trex = dsc.decoded->header.w / sprites_trex;
-  // lv_image_decoder_close(&dsc);
+  // t-rex white = #f7f7f7
+  // t-rex grey  = #535353
 
-  // printf("large size: %d\n", width_obstacle_large);
-  // printf("small size: %d\n", width_obstacle_small);
-  // printf("trex size : %d\n", width_trex);
+  // lv_subject_init_int(&subj_horizon_offset, 0);
 
-  for(int i = 0; assets[i].name; i++) {
-    printf("[%*s] %*d / %d = %*d\n", 25, assets[i].name, 4, assets[i].dsc->header.w, assets[i].sprites, 4, assets[i].dsc->header.w / assets[i].sprites);
-  }
-  exit(0);
-
+  // Setup the display
   // lv_xml_register_event_cb(NULL, "my_callback_1", appmodule_switch_screen);
-
-  lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x2255AA), LV_PART_MAIN);
+  // lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x2255AA), LV_PART_MAIN);
   // lv_xml_component_register_from_data("my_button"   , component_my_button_start);
   // lv_xml_component_register_from_data("screen_about", screen_about_start       );
   lv_xml_component_register_from_data("screen_main" , screen_main_start        );
-
-  lv_obj_t * screen_main  = lv_xml_create(NULL, "screen_main", NULL);
-  lv_obj_add_event_cb(screen_main, appmodule_main_screen_events, LV_EVENT_CLICKED | LV_EVENT_PRESSED, NULL);
+  screen_main  = lv_xml_create(NULL, "screen_main", NULL);
+  // lv_obj_add_event_cb(screen_main, appmodule_main_screen_events, LV_EVENT_CLICKED | LV_EVENT_PRESSED, NULL);
   lv_scr_load(screen_main);
 
+  // Auto-detect background color from horizon (top-left pixel)
+  uint32_t global_bg_color = 0xff00ff;
+  for(int i = 0; appmodule_assets[i].name; i++) {
+    if (strcmp("assets/horizon.png", appmodule_assets[i].name)) continue;
+    global_bg_color =
+      (appmodule_assets[i].dsc->data[0] << 16) +
+      (appmodule_assets[i].dsc->data[1] <<  8) +
+      (appmodule_assets[i].dsc->data[2] <<  0) ;
+    break;
+  }
+  lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(global_bg_color), LV_PART_MAIN);
 
-
-
-
+  // Limit trex to 1 sprite
+  struct appmodule_asset asset_trex = appmodule_assets[6]; // TODO: use search here as well
+  lv_obj_t *img_trex = lv_obj_find_by_name(NULL, "trex");
+  lv_obj_set_width(img_trex, asset_trex.dsc->header.w / asset_trex.sprites);
+  // lv_image_set_inner_align(img_trex, LV_IMAGE_ALIGN_TOP_LEFT);
 
   return 0;
 }
