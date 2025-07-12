@@ -20,7 +20,7 @@ override CFLAGS+=-I/opt/homebrew/include
 override LDFLAGS?=
 override CPPFLAGS?=
 
-override LDFLAGS+=$(shell --libs sdl2-config)
+override LDFLAGS+=-lSDL2
 
 # override CFLAGS+=-D WEBVIEW_STATIC
 # override CFLAGS+=-D WINTERM
