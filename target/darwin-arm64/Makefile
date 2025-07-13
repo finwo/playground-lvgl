@@ -82,17 +82,19 @@ override CPPFLAGS+=$(CFLAGS)
 
 override CFLAGS+=-DLV_USE_LABEL
 
-includeXmlFiles:=
-includeXmlFiles+=$(wildcard src/*/components/*.xml)
-includeXmlFiles+=$(wildcard src/*/screens/*.xml)
+includeFiles:=
+includeFiles+=src/AppModule/assets/global.json
+includeFiles+=src/AppModule/assets/offline-resources-1x.png
+includeFiles+=src/AppModule/assets/offline-resources-2x.png
+includeFiles+=$(wildcard src/*/screens/*.xml)
 
 .PHONY: default
-default: $(BIN)
+default: output/$(BIN) output/assets
 
-$(OBJ): $(includeXmlFiles)
+$(OBJ):
 
-component/app/lib/.dep/config.mk:
-	bash -c "cd component/app && dep i"
+lib/.dep/config.mk:
+	bash -c "cp ../package.ini . && dep i"
 
 .cc.o:
 	$(CPP) $< $(CPPFLAGS) -c -o $@
@@ -100,8 +102,14 @@ component/app/lib/.dep/config.mk:
 .c.o:
 	$(CC) $< $(CFLAGS) -c -o $@
 
-$(BIN): $(OBJ)
+output/${BIN}: ${OBJ}
 	$(CPP) $(OBJ) $(CPPFLAGS) $(LDFLAGS) -s -o $@
+
+output/assets: ${includeFiles}
+	for asset in ${includeFiles}; do \
+		mkdir -p output/$$(dirname $$(echo $$asset | cut -d "/" -f 3-)) ; \
+		cp $$asset output/$$(dirname $$(echo $$asset | cut -d "/" -f 3-)) ; \
+	done
 
 .PHONY: clean
 clean:

@@ -10,13 +10,15 @@ BIN?=playground-lvgl
 DEPS:=
 DEPS+=$(wildcard src/*.c)
 DEPS+=$(wildcard src/*/*.c)
+DEPS+=$(wildcard src/*/assets/*.json)
 DEPS+=$(wildcard src/*/components/*.xml)
 DEPS+=$(wildcard src/*/components/*/*.xml)
+DEPS+=$(wildcard src/*/screens/*.xml)
 DEPS+=$(wildcard target/${TARGET}/src/*.c)
 DEPS+=target/${TARGET}/src/lv_conf.h
 
 .PHONY: default
-default: ${BIN}
+default: build/output/${BIN}
 
 build: ${DEPS}
 	mkdir -p build
@@ -24,9 +26,12 @@ build: ${DEPS}
 	rsync -a lib build/
 	rsync -a target/${TARGET}/* build/
 
-${BIN}: build
+build/output/${BIN}: build
 	${MAKE} --directory build/ -j
-	mv build/playground-lvgl .
+
+.PHONY: start
+start: build/output/${BIN}
+	build/output/${BIN}
 
 .PHONY: clean
 clean:

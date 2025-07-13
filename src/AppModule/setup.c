@@ -1,3 +1,4 @@
+#include "appmodule.h"
 #include "lvgl/lvgl.h"
 #include "lvgl/src/core/lv_obj_pos.h"
 #include "lvgl/src/draw/lv_image_dsc.h"
@@ -8,7 +9,10 @@
 #include "lvgl/src/others/xml/lv_xml.h"
 #include "lvgl/src/widgets/image/lv_image.h"
 
+#include <libgen.h>
 #include <stdint.h>
+#include <stdlib.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,46 +32,87 @@ extern "C" {
 #endif
 
 #include "rxi/log.h"
+#include "kgabis/parson.h"
+#include "tidwall/buf.h"
 
 #include "AppModule/appmodule.h"
-#include "util/incbin.h"
+
+#include "util/get_bin_path.h"
+#include "util/fs.h"
+
+// #include "util/incbin.h"
 
 lv_obj_t *screen_main;
 // lv_subject_t subj_horizon_offset;
 
-INCBIN(component_my_button, "AppModule/components/my_button.xml");
-INCBIN(screen_main        , "AppModule/screens/main.xml"        );
-INCBIN(screen_about       , "AppModule/screens/about.xml"       );
+// INCBIN(component_my_button, "AppModule/components/my_button.xml");
+// INCBIN(screen_main        , "AppModule/screens/main.xml"        );
+// INCBIN(screen_about       , "AppModule/screens/about.xml"       );
 
-INCBIN(img_cloud         , "AppModule/assets/2x-cloud.png");
-INCBIN(img_horizon       , "AppModule/assets/2x-horizon.png");
-INCBIN(img_obstacle_large, "AppModule/assets/2x-obstacle-large.png");
-INCBIN(img_obstacle_small, "AppModule/assets/2x-obstacle-small.png");
-INCBIN(img_restart       , "AppModule/assets/2x-restart.png");
-INCBIN(img_text          , "AppModule/assets/2x-text.png");
-INCBIN(img_trex          , "AppModule/assets/2x-trex.png");
+// INCBIN(img_cloud         , "AppModule/assets/2x-cloud.png");
+// INCBIN(img_horizon       , "AppModule/assets/2x-horizon.png");
+// INCBIN(img_obstacle_large, "AppModule/assets/2x-obstacle-large.png");
+// INCBIN(img_obstacle_small, "AppModule/assets/2x-obstacle-small.png");
+// INCBIN(img_restart       , "AppModule/assets/2x-restart.png");
+// INCBIN(img_text          , "AppModule/assets/2x-text.png");
+// INCBIN(img_trex          , "AppModule/assets/2x-trex.png");
 
-struct appmodule_asset *appmodule_assets = (struct appmodule_asset[]){
-  { .name = "assets/cloud.png"         , .start = img_cloud_start         , .end = img_cloud_end         , .sprites = 1, .dump = false },
-  { .name = "assets/horizon.png"       , .start = img_horizon_start       , .end = img_horizon_end       , .sprites = 1, .dump = false },
-  { .name = "assets/obstacle_large.png", .start = img_obstacle_large_start, .end = img_obstacle_large_end, .sprites = 3, .dump = false },
-  { .name = "assets/obstacle_small.png", .start = img_obstacle_small_start, .end = img_obstacle_small_end, .sprites = 6, .dump = false },
-  { .name = "assets/restart.png"       , .start = img_restart_start       , .end = img_restart_end       , .sprites = 1, .dump = false },
-  { .name = "assets/text.png"          , .start = img_text_start          , .end = img_text_end          , .sprites = 1, .dump = false },
-  { .name = "assets/trex.png"          , .start = img_trex_start          , .end = img_trex_end          , .sprites = 6, .dump = false },
-  { .name = NULL, },
-};
+// struct appmodule_asset *appmodule_assets = (struct appmodule_asset[]){
+//   { .name = "assets/cloud.png"         , .start = img_cloud_start         , .end = img_cloud_end         , .sprites = 1, .dump = false },
+//   { .name = "assets/horizon.png"       , .start = img_horizon_start       , .end = img_horizon_end       , .sprites = 1, .dump = false },
+//   { .name = "assets/obstacle_large.png", .start = img_obstacle_large_start, .end = img_obstacle_large_end, .sprites = 3, .dump = false },
+//   { .name = "assets/obstacle_small.png", .start = img_obstacle_small_start, .end = img_obstacle_small_end, .sprites = 6, .dump = false },
+//   { .name = "assets/restart.png"       , .start = img_restart_start       , .end = img_restart_end       , .sprites = 1, .dump = false },
+//   { .name = "assets/text.png"          , .start = img_text_start          , .end = img_text_end          , .sprites = 1, .dump = false },
+//   { .name = "assets/trex.png"          , .start = img_trex_start          , .end = img_trex_end          , .sprites = 6, .dump = false },
+//   { .name = NULL, },
+// };
 
-static void appmodule_switch_screen(lv_event_t * e) {
-  printf("switch_screen called\n");
+// static void appmodule_switch_screen(lv_event_t * e) {
+//   printf("switch_screen called\n");
+// }
+
+// static void appmodule_main_screen_events(lv_event_t * e) {
+//   lv_event_code_t event_code = lv_event_get_code(e);
+//   printf("Event! %d\n", event_code);
+// }
+
+const char * appmodule_load_spritesheets(const char *appDir, JSON_Array *arr_spritesheets) {
+  lv_image_dsc_t loader_dsc = {};
+  lv_image_decoder_dsc_t dsc;
+  struct buf *encodedData;
+
+  int spritesheet_count = json_array_get_count(arr_spritesheets);
+  for(int i=0; i<spritesheet_count; i++) {
+
+    JSON_Value *val_spritesheet = json_array_get_value(arr_spritesheets, i);
+    if (json_value_get_type(val_spritesheet) != JSONObject) continue;
+    JSON_Object *obj_spritesheet = json_value_get_object(val_spritesheet);
+    if (!json_object_has_value_of_type(obj_spritesheet, "name"   , JSONString)) continue;
+    if (!json_object_has_value_of_type(obj_spritesheet, "texture", JSONString)) continue;
+
+    char *texturePath = NULL;
+    asprintf(&texturePath, "%s/assets/%s", appDir, json_object_get_string(obj_spritesheet, "texture"));
+
+    encodedData = file_get_contents(texturePath);
+    if (!encodedData) {
+      free(texturePath);
+      continue;
+    }
+
+    loader_dsc.data      = encodedData->data;
+    loader_dsc.data_size = encodedData->len;
+    lv_image_decoder_open(&dsc, &loader_dsc, NULL);
+    lv_xml_register_image(NULL, json_object_get_string(obj_spritesheet, "name"), dsc.decoded);
+
+    free(encodedData);
+    log_debug("Found spritesheet: %s, %s\n", json_object_get_string(obj_spritesheet, "name"), texturePath);
+  }
+
+  return NULL;
 }
 
-static void appmodule_main_screen_events(lv_event_t * e) {
-  lv_event_code_t event_code = lv_event_get_code(e);
-  printf("Event! %d\n", event_code);
-}
-
-int appmodule_setup() {
+int appmodule_setup(JSON_Object *obj_config_root) {
   const char *loglevel = "trace";
 
   if (0) {
@@ -89,6 +134,128 @@ int appmodule_setup() {
     return 1;
   }
 
+  // Basic validation
+  if (!json_object_has_value_of_type(obj_config_root, "spritesheets", JSONArray)) {
+    log_fatal("spritesheets missing in config");
+    exit(1);
+  }
+
+  char *appDir = dirname(get_bin_path());
+  const char *error = appmodule_load_spritesheets(appDir, json_object_get_array(obj_config_root, "spritesheets"));
+  if (error) {
+    log_fatal("could not load spritesheets: %s", error);
+    exit(1);
+  }
+
+
+  // Fetch display configuration
+  // TODO: share with /main.c?
+  JSON_Object *obj_display = json_object_get_object(obj_config_root, "display");
+  if (!json_object_has_value_of_type(obj_display, "scaling", JSONNumber)) {
+    log_fatal("assets/global.json missing display.scaling number");
+    exit(1);
+  }
+  if (!json_object_has_value_of_type(obj_display, "width", JSONNumber)) {
+    log_fatal("assets/global.json missing display.width number");
+    exit(1);
+  }
+  if (!json_object_has_value_of_type(obj_display, "height", JSONNumber)) {
+    log_fatal("assets/global.json missing display.height number");
+    exit(1);
+  }
+  int displayScaling = (int)json_object_get_number(obj_display, "scaling");
+  int displayWidth   = (int)json_object_get_number(obj_display, "width");
+  int displayHeight  = (int)json_object_get_number(obj_display, "height");
+  if (displayScaling < 1 || displayScaling > 2) {
+    log_fatal("Invalid display scaling, only 1 or 2 allowed");
+    exit(1);
+  }
+
+
+  if (json_object_has_value_of_type(obj_config_root, "backgroundEl", JSONArray)) {
+    JSON_Array *arr_backgroundEl = json_object_get_array(obj_config_root, "backgroundEl");
+
+    int backgroundElCount = json_array_get_count(arr_backgroundEl);
+    for(int i=0; i<backgroundElCount; i++) {
+      JSON_Value *val_backgroundEl = json_array_get_value(arr_backgroundEl, i);
+      if (json_value_get_type(val_backgroundEl) != JSONObject) continue;
+      JSON_Object *obj_backgroundEl = json_value_get_object(val_backgroundEl);
+
+      if (!json_object_has_value_of_type(obj_backgroundEl, "type", JSONString)) continue;
+
+      if (!strcmp(json_object_get_string(obj_backgroundEl, "type"), "cloud")) {
+
+        if (!clouds) clouds = calloc(cloud_count+1, sizeof(struct game_obj_drawn));
+        clouds = realloc(clouds, (cloud_count+1) * sizeof(struct game_obj_drawn));
+
+        clouds[cloud_count].sprite.texture = displayScaling == 1 ? "1x" : "2x";
+        // clouds[cloud_count].sprite.
+
+        printf("Found backgroundEl\n");
+
+        cloud_count++;
+      } else {
+        // Unknown backgroundEl type
+        continue;
+      }
+
+
+    }
+
+
+
+  }
+
+
+
+
+  // // Add a cloud
+  // clouds = calloc(1, sizeof(struct game_obj_drawn));
+  // clouds[0].base.pos.x = displayWidth;
+  // clouds[0].base.pos.y = displayWidth;
+
+
+  // // Build horizon lines
+  // horizon_lines = calloc(
+
+
+
+
+
+  // int key_count = json_object_get_count(config_root_obj);
+  // for(int i = 0; i < key_count; i++) {
+  //   printf("config has key: %s\n", json_object_get_name(config_root_obj, i));
+  // }
+
+
+
+     // if (json_value_get_type(root_value) != JSONArray) {
+     //    system(cleanup_command);
+     //    return;
+    // }
+
+    // /* parsing json and validating output */
+    // root_value = json_parse_file(output_filename);
+    // if (json_value_get_type(root_value) != JSONArray) {
+    //     system(cleanup_command);
+    //     return;
+    // }
+
+
+
+  // printf("Config: %s\n", globalConfigContents->data);
+
+
+  // struct xml_document* globalXmlDocument = xml_parse_document(globalXmlContents->data, globalXmlContents->len);
+	// struct xml_node* globalXmlRoot = xml_document_root(globalXmlDocument);
+
+  // struct xml_string *root_tagname = xml_node_name(globalXmlRoot);
+
+  // uint8_t *root_tagname_str = calloc(xml_string_length(root_tagname) + 1, sizeof(uint8_t));
+  // xml_string_copy(root_tagname, root_tagname_str, xml_string_length(root_tagname));
+
+  // printf("root tag: %s\n", root_tagname_str);
+
   // // Write our assets to ramdisk
   // // Allows us to reference them without carrying the decoded data everywhere
   // const char *assets[] = {
@@ -108,23 +275,23 @@ int appmodule_setup() {
   //   lfs_file_close(&lfs, &file);
   // }
 
-  // Decompress png images into dsc structs
-  lv_image_dsc_t loader_dsc = {};
-  lv_image_decoder_dsc_t dsc;
-  for(int i = 0; appmodule_assets[i].name; i++) {
-    loader_dsc.data      = appmodule_assets[i].start;
-    loader_dsc.data_size = appmodule_assets[i].end - appmodule_assets[i].start;
-    lv_image_decoder_open(&dsc, &loader_dsc, NULL);
-    appmodule_assets[i].dsc = dsc.decoded;
-    lv_xml_register_image(NULL, appmodule_assets[i].name, appmodule_assets[i].dsc);
-    if (appmodule_assets[i].dump) {
-      for(int j = 0; j < appmodule_assets[i].dsc->data_size; j++) {
-        printf("%.2x ", appmodule_assets[i].dsc->data[j]);
-        if (!(j%8)) printf("   ");
-        if (!(j%16)) printf("\n");
-      }
-    }
-  }
+  // // Decompress png images into dsc structs
+  // lv_image_dsc_t loader_dsc = {};
+  // lv_image_decoder_dsc_t dsc;
+  // for(int i = 0; appmodule_assets[i].name; i++) {
+  //   loader_dsc.data      = appmodule_assets[i].start;
+  //   loader_dsc.data_size = appmodule_assets[i].end - appmodule_assets[i].start;
+  //   lv_image_decoder_open(&dsc, &loader_dsc, NULL);
+  //   appmodule_assets[i].dsc = dsc.decoded;
+  //   lv_xml_register_image(NULL, appmodule_assets[i].name, appmodule_assets[i].dsc);
+  //   if (appmodule_assets[i].dump) {
+  //     for(int j = 0; j < appmodule_assets[i].dsc->data_size; j++) {
+  //       printf("%.2x ", appmodule_assets[i].dsc->data[j]);
+  //       if (!(j%8)) printf("   ");
+  //       if (!(j%16)) printf("\n");
+  //     }
+  //   }
+  // }
 
   // // DEBUG: print sizes
   // for(int i = 0; assets[i].name; i++) {
@@ -134,36 +301,45 @@ int appmodule_setup() {
   // t-rex white = #f7f7f7
   // t-rex grey  = #535353
 
-  // lv_subject_init_int(&subj_horizon_offset, 0);
+  // Build the ground
 
-  // Setup the display
-  // lv_xml_register_event_cb(NULL, "my_callback_1", appmodule_switch_screen);
+
+
+  // // lv_subject_init_int(&subj_horizon_offset, 0);
+  // char *main_xml_path = NULL;
+  // asprintf(&main_xml_path, "%s%s", appDir, "/screens/main.xml");
+  // struct buf *main_xml = file_get_contents(main_xml_path);
+
+  // // // Setup the display
+  // // // lv_xml_register_event_cb(NULL, "my_callback_1", appmodule_switch_screen);
   // lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x2255AA), LV_PART_MAIN);
-  // lv_xml_component_register_from_data("my_button"   , component_my_button_start);
-  // lv_xml_component_register_from_data("screen_about", screen_about_start       );
-  lv_xml_component_register_from_data("screen_main" , screen_main_start        );
-  screen_main  = lv_xml_create(NULL, "screen_main", NULL);
-  // lv_obj_add_event_cb(screen_main, appmodule_main_screen_events, LV_EVENT_CLICKED | LV_EVENT_PRESSED, NULL);
-  lv_scr_load(screen_main);
+  // // // lv_xml_component_register_from_data("my_button"   , component_my_button_start);
+  // // // lv_xml_component_register_from_data("screen_about", screen_about_start       );
+  // lv_xml_component_register_from_data("screen_main" , main_xml->data);
+  // screen_main = lv_xml_create(NULL, "screen_main", NULL);
+  // // // lv_obj_add_event_cb(screen_main, appmodule_main_screen_events, LV_EVENT_CLICKED | LV_EVENT_PRESSED, NULL);
+  // lv_scr_load(screen_main);
 
-  // Auto-detect background color from horizon (top-left pixel)
-  uint32_t global_bg_color = 0xff00ff;
-  for(int i = 0; appmodule_assets[i].name; i++) {
-    if (strcmp("assets/horizon.png", appmodule_assets[i].name)) continue;
-    global_bg_color =
-      (appmodule_assets[i].dsc->data[0] << 16) +
-      (appmodule_assets[i].dsc->data[1] <<  8) +
-      (appmodule_assets[i].dsc->data[2] <<  0) ;
-    break;
-  }
-  lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(global_bg_color), LV_PART_MAIN);
+  // // Auto-detect background color from horizon (top-left pixel)
+  // uint32_t global_bg_color = 0xff00ff;
+  // for(int i = 0; appmodule_assets[i].name; i++) {
+  //   if (strcmp("assets/horizon.png", appmodule_assets[i].name)) continue;
+  //   global_bg_color =
+  //     (appmodule_assets[i].dsc->data[0] << 16) +
+  //     (appmodule_assets[i].dsc->data[1] <<  8) +
+  //     (appmodule_assets[i].dsc->data[2] <<  0) ;
+  //   break;
+  // }
+  // lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(global_bg_color), LV_PART_MAIN);
 
-  // Limit trex to 1 sprite
-  struct appmodule_asset asset_trex = appmodule_assets[6]; // TODO: use search here as well
-  lv_obj_t *img_trex = lv_obj_find_by_name(NULL, "trex");
-  lv_obj_set_width(img_trex, asset_trex.dsc->header.w / asset_trex.sprites);
-  // lv_image_set_inner_align(img_trex, LV_IMAGE_ALIGN_TOP_LEFT);
+  // // Limit trex to 1 sprite
+  // struct appmodule_asset asset_trex = appmodule_assets[6]; // TODO: use search here as well
+  // lv_obj_t *img_trex = lv_obj_find_by_name(NULL, "trex");
+  // lv_obj_set_width(img_trex, asset_trex.dsc->header.w / asset_trex.sprites);
+  // // lv_image_set_inner_align(img_trex, LV_IMAGE_ALIGN_TOP_LEFT);
+  //
 
+  free(appDir);
   return 0;
 }
 

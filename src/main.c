@@ -1,5 +1,5 @@
 #include "lvgl/src/drivers/sdl/lv_sdl_window.h"
-#include "lvgl/src/libs/lodepng/lv_lodepng.h"
+
 #include <stdint.h>
 
 #ifdef _WIN32
@@ -16,14 +16,18 @@
 
 #include "lvgl/lvgl.h"
 #include "rxi/log.h"
+#include "kgabis/parson.h"
 
 // #include "lfs.h"
 // #include "bd/lfs_rambd.h"
 
+#include "util/get_bin_path.h"
+#include "util/fs.h"
+
 #include "AppModule/appmodule.h"
 
-#define SDL_HOR_RES 960
-#define SDL_VER_RES 640
+#define SDL_HOR_RES 600
+#define SDL_VER_RES 150
 
 lv_display_t *lvDisplay;
 lv_indev_t *lvMouse;
@@ -99,6 +103,61 @@ int main() {
     setenv("DBUS_FATAL_WARNINGS", "0", 1);
   #endif
 
+  char *binPath = get_bin_path();
+  if (!binPath) {
+    log_fatal("Could not detect binary path");
+    exit(1);
+  }
+
+  char *binDir = dirname(strdup(binPath));
+  if (!binDir) {
+    log_fatal("Could not detect binary directory path");
+    exit(1);
+  }
+
+  // Ensure global defs exist
+  char *globalConfigFile = NULL;
+  asprintf(&globalConfigFile, "%s%s", binDir, "/assets/global.json");
+  if (!file_exists(globalConfigFile, "r")) {
+    log_fatal("assets/global.json is not available");
+    exit(1);
+  }
+
+  // Read the config with minimal validation
+  struct buf *globalConfigContents = file_get_contents(globalConfigFile);
+  JSON_Value *config_root = json_parse_string(globalConfigContents->data);
+  if (json_value_get_type(config_root) != JSONObject) {
+    log_fatal("assets/global.json is not an object");
+    exit(1);
+  }
+  JSON_Object *obj_root = json_value_get_object(config_root);
+  if (!json_object_has_value_of_type(obj_root, "display", JSONObject)) {
+    log_fatal("assets/global.json missing display object");
+    exit(1);
+  }
+
+  // Fetch display configuration
+  JSON_Object *obj_display = json_object_get_object(obj_root, "display");
+  if (!json_object_has_value_of_type(obj_display, "scaling", JSONNumber)) {
+    log_fatal("assets/global.json missing display.scaling number");
+    exit(1);
+  }
+  if (!json_object_has_value_of_type(obj_display, "width", JSONNumber)) {
+    log_fatal("assets/global.json missing display.width number");
+    exit(1);
+  }
+  if (!json_object_has_value_of_type(obj_display, "height", JSONNumber)) {
+    log_fatal("assets/global.json missing display.height number");
+    exit(1);
+  }
+  int displayScaling = (int)json_object_get_number(obj_display, "scaling");
+  int displayWidth   = (int)json_object_get_number(obj_display, "width");
+  int displayHeight  = (int)json_object_get_number(obj_display, "height");
+  if (displayScaling < 1 || displayScaling > 2) {
+    log_fatal("Invalid display scaling, only 1 or 2 allowed");
+    exit(1);
+  }
+
   /* Register the log print callback */
   #if LV_USE_LOG != 0
   lv_log_register_print_cb(lv_log_print_g_cb);
@@ -106,14 +165,14 @@ int main() {
 
   /* Add a display
   * Use the 'monitor' driver which creates window on PC's monitor to simulate a display*/
-  lvDisplay    = lv_sdl_window_create(SDL_HOR_RES, SDL_VER_RES);
+  lvDisplay    = lv_sdl_window_create(displayWidth * displayScaling, displayHeight * displayScaling);
   lvMouse      = lv_sdl_mouse_create();
   lvMouseWheel = lv_sdl_mousewheel_create();
   lvKeyboard   = lv_sdl_keyboard_create();
 
   lv_sdl_window_set_resizeable(lvDisplay, false);
 
-  if (appmodule_setup()) {
+  if (appmodule_setup(obj_root)) {
     log_fatal("Error setting up AppModule");
     return 1;
   }

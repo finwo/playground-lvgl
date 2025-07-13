@@ -10,4 +10,6 @@ bool file_exists(const char *filename, const char *mode);
 
 #if defined(_WIN32) || defined(_WIN64)
 char *dirname(const char *path);
+#else
+#include <libgen.h>
 #endif

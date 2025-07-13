@@ -84,6 +84,7 @@ ssize_t file_put_contents(const char *filename, const struct buf *data, int flag
 }
 
 struct buf * file_get_contents(const char *filename) {
+  printf("Opening: %s\n", filename);
 
   FILE *fd = fopen(filename, "r");
   if (!fd) {
