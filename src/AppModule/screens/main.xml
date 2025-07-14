@@ -1,14 +1,14 @@
-<screen scrollable="false" width="600" height="150" resizable="false">
+<screen scrollable="false" resizable="false">
   <!-- <images> -->
   <!--   <file name="trex.png" src_path="M:assets/1x-trex.png"/> -->
   <!-- </images> -->
-  <view style_bg_color="0x005500" layout="flex">
+  <view layout="flex">
 
-    <lv_image src="1x" inner_align="top-left"/>
+    <lv_image src="spritesheet" inner_align="top-left"/>
 
     <!-- <lv_image name="trex" src="assets/trex.png" inner_align="top-left" /> -->
 
-    <lv_image name="horizon" src="1x" x="0" y="400" width="600" inner_align="tile" />
+    <!-- <lv_image name="horizon" src="1x" x="0" y="400" width="600" inner_align="tile" /> -->
 
     <!-- <style bg_opa="opa_cover"/> -->
     <!-- </lv_image> -->

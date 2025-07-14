@@ -37,6 +37,10 @@ lv_indev_t *lvKeyboard;
 // lfs_t      lfs;
 // lfs_file_t file;
 
+int display_scaling;
+int display_width;
+int display_height;
+
 #if LV_USE_LOG != 0
 static void lv_log_print_g_cb(lv_log_level_t level, const char * buf) {
     UNUSED(level);
@@ -57,6 +61,9 @@ int main() {
 #else // no WINTERM
 int main() {
 #endif
+
+  // Seed random, to not always produce the exact same results
+  srand(time(NULL));
 
   lv_init();
 
@@ -150,10 +157,10 @@ int main() {
     log_fatal("assets/global.json missing display.height number");
     exit(1);
   }
-  int displayScaling = (int)json_object_get_number(obj_display, "scaling");
-  int displayWidth   = (int)json_object_get_number(obj_display, "width");
-  int displayHeight  = (int)json_object_get_number(obj_display, "height");
-  if (displayScaling < 1 || displayScaling > 2) {
+  display_scaling = (int)json_object_get_number(obj_display, "scaling");
+  display_width   = (int)json_object_get_number(obj_display, "width");
+  display_height  = (int)json_object_get_number(obj_display, "height");
+  if (display_scaling < 1 || display_scaling > 2) {
     log_fatal("Invalid display scaling, only 1 or 2 allowed");
     exit(1);
   }
@@ -165,7 +172,7 @@ int main() {
 
   /* Add a display
   * Use the 'monitor' driver which creates window on PC's monitor to simulate a display*/
-  lvDisplay    = lv_sdl_window_create(displayWidth * displayScaling, displayHeight * displayScaling);
+  lvDisplay    = lv_sdl_window_create(display_width * display_scaling, display_height * display_scaling);
   lvMouse      = lv_sdl_mouse_create();
   lvMouseWheel = lv_sdl_mousewheel_create();
   lvKeyboard   = lv_sdl_keyboard_create();

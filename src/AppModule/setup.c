@@ -1,4 +1,24 @@
-#include "appmodule.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
+#include <stdio.h>
+#include <libgen.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifdef _WIN32
+// #include <windows.h>
+#else
+// #include <pthread.h>
+// #include <unistd.h>
+#endif
+
 #include "lvgl/lvgl.h"
 #include "lvgl/src/core/lv_obj_pos.h"
 #include "lvgl/src/draw/lv_image_dsc.h"
@@ -9,28 +29,6 @@
 #include "lvgl/src/others/xml/lv_xml.h"
 #include "lvgl/src/widgets/image/lv_image.h"
 
-#include <libgen.h>
-#include <stdint.h>
-#include <stdlib.h>
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifndef NULL
-#define NULL ((void*)0)
-#endif
-
-#include <stdio.h>
-
-#ifdef _WIN32
-// #include <windows.h>
-#else
-// #include <pthread.h>
-// #include <unistd.h>
-#endif
-
 #include "rxi/log.h"
 #include "kgabis/parson.h"
 #include "tidwall/buf.h"
@@ -39,11 +37,33 @@ extern "C" {
 
 #include "util/get_bin_path.h"
 #include "util/fs.h"
+#include "util/rng.h"
 
 // #include "util/incbin.h"
 
 lv_obj_t *screen_main;
 // lv_subject_t subj_horizon_offset;
+
+int game_state;
+
+struct game_obj_drawn **clouds;
+const lv_draw_buf_t *buf_spritesheet;
+JSON_Object *obj_spritesheet;
+
+int time_window = 10000;
+
+int cloud_count   = 0;
+int cloud_desired = 0;
+int cloud_minY    = 0;
+int cloud_maxY    = 0;
+int cloud_sourceX = 0;
+int cloud_sourceY = 0;
+int cloud_width   = 0;
+int cloud_height  = 0;
+int cloud_speed   = 0;
+
+// struct game_obj_drawn *horizon_lines;
+// int horizon_lines_count;
 
 // INCBIN(component_my_button, "AppModule/components/my_button.xml");
 // INCBIN(screen_main        , "AppModule/screens/main.xml"        );
@@ -77,41 +97,6 @@ lv_obj_t *screen_main;
 //   printf("Event! %d\n", event_code);
 // }
 
-const char * appmodule_load_spritesheets(const char *appDir, JSON_Array *arr_spritesheets) {
-  lv_image_dsc_t loader_dsc = {};
-  lv_image_decoder_dsc_t dsc;
-  struct buf *encodedData;
-
-  int spritesheet_count = json_array_get_count(arr_spritesheets);
-  for(int i=0; i<spritesheet_count; i++) {
-
-    JSON_Value *val_spritesheet = json_array_get_value(arr_spritesheets, i);
-    if (json_value_get_type(val_spritesheet) != JSONObject) continue;
-    JSON_Object *obj_spritesheet = json_value_get_object(val_spritesheet);
-    if (!json_object_has_value_of_type(obj_spritesheet, "name"   , JSONString)) continue;
-    if (!json_object_has_value_of_type(obj_spritesheet, "texture", JSONString)) continue;
-
-    char *texturePath = NULL;
-    asprintf(&texturePath, "%s/assets/%s", appDir, json_object_get_string(obj_spritesheet, "texture"));
-
-    encodedData = file_get_contents(texturePath);
-    if (!encodedData) {
-      free(texturePath);
-      continue;
-    }
-
-    loader_dsc.data      = encodedData->data;
-    loader_dsc.data_size = encodedData->len;
-    lv_image_decoder_open(&dsc, &loader_dsc, NULL);
-    lv_xml_register_image(NULL, json_object_get_string(obj_spritesheet, "name"), dsc.decoded);
-
-    free(encodedData);
-    log_debug("Found spritesheet: %s, %s\n", json_object_get_string(obj_spritesheet, "name"), texturePath);
-  }
-
-  return NULL;
-}
-
 int appmodule_setup(JSON_Object *obj_config_root) {
   const char *loglevel = "trace";
 
@@ -134,85 +119,152 @@ int appmodule_setup(JSON_Object *obj_config_root) {
     return 1;
   }
 
+  log_info("Logging driver initialized: %s\n", loglevel);
+
   // Basic validation
-  if (!json_object_has_value_of_type(obj_config_root, "spritesheets", JSONArray)) {
-    log_fatal("spritesheets missing in config");
+  if (!json_object_has_value_of_type(obj_config_root, "config", JSONObject)) {
+    log_fatal("config missing in globals.json");
+    exit(1);
+  }
+  if (!json_object_has_value_of_type(obj_config_root, "spritesheets", JSONObject)) {
+    log_fatal("spritesheets missing in globals.json");
     exit(1);
   }
 
+  // Fetch global configuration
+  JSON_Object *obj__config = json_object_get_object(obj_config_root, "config");
+  time_window = (int)json_object_get_number(obj__config, "timeWindow");
+  time_window = time_window ? time_window : 10000;
+
+  // Get the spritesheet config
+  char *target_spritesheet = NULL;
+  asprintf(&target_spritesheet, "%dx", display_scaling);
+  log_debug("Target spritesheet: %s\n", target_spritesheet);
+  JSON_Object *obj_spritesheets = json_object_get_object(obj_config_root, "spritesheets");
+  if (!json_object_has_value_of_type(obj_spritesheets, target_spritesheet, JSONObject)) {
+    log_fatal("Target spritesheet missing in config");
+    exit(1);
+  }
+  obj_spritesheet = json_object_get_object(obj_spritesheets, target_spritesheet);
+
+  // Load the spritesheet texture
+  if (!json_object_has_value_of_type(obj_spritesheet, "texture", JSONString)) {
+    log_fatal("Spritesheet '%s' is missing 'texture' field", target_spritesheet);
+    exit(1);
+  }
   char *appDir = dirname(get_bin_path());
-  const char *error = appmodule_load_spritesheets(appDir, json_object_get_array(obj_config_root, "spritesheets"));
-  if (error) {
-    log_fatal("could not load spritesheets: %s", error);
+  char *texturePath = NULL;
+  asprintf(&texturePath, "%s/assets/%s", appDir, json_object_get_string(obj_spritesheet, "texture"));
+  struct buf *encodedData = file_get_contents(texturePath);
+  if (!encodedData) {
+    log_fatal("Could not read spritesheet: %s\n", texturePath);
     exit(1);
   }
+  lv_image_decoder_dsc_t dsc;
+  lv_image_dsc_t loader_dsc = {
+    .data      = (const uint8_t *)encodedData->data,
+    .data_size = encodedData->len,
+  };
+  lv_image_decoder_open(&dsc, &loader_dsc, NULL);
+  buf_spritesheet = dsc.decoded;
+  lv_xml_register_image(NULL, "spritesheet", dsc.decoded);
 
+  // Load sprite info
+  if (json_object_has_value_of_type(obj_spritesheet, "spriteset", JSONObject)) {
+    JSON_Object *obj_spriteset = json_object_get_object(obj_spritesheet, "spriteset");
+    printf("Loading cloud spriteset\n");
 
-  // Fetch display configuration
-  // TODO: share with /main.c?
-  JSON_Object *obj_display = json_object_get_object(obj_config_root, "display");
-  if (!json_object_has_value_of_type(obj_display, "scaling", JSONNumber)) {
-    log_fatal("assets/global.json missing display.scaling number");
-    exit(1);
-  }
-  if (!json_object_has_value_of_type(obj_display, "width", JSONNumber)) {
-    log_fatal("assets/global.json missing display.width number");
-    exit(1);
-  }
-  if (!json_object_has_value_of_type(obj_display, "height", JSONNumber)) {
-    log_fatal("assets/global.json missing display.height number");
-    exit(1);
-  }
-  int displayScaling = (int)json_object_get_number(obj_display, "scaling");
-  int displayWidth   = (int)json_object_get_number(obj_display, "width");
-  int displayHeight  = (int)json_object_get_number(obj_display, "height");
-  if (displayScaling < 1 || displayScaling > 2) {
-    log_fatal("Invalid display scaling, only 1 or 2 allowed");
-    exit(1);
-  }
-
-
-  if (json_object_has_value_of_type(obj_config_root, "backgroundEl", JSONArray)) {
-    JSON_Array *arr_backgroundEl = json_object_get_array(obj_config_root, "backgroundEl");
-
-    int backgroundElCount = json_array_get_count(arr_backgroundEl);
-    for(int i=0; i<backgroundElCount; i++) {
-      JSON_Value *val_backgroundEl = json_array_get_value(arr_backgroundEl, i);
-      if (json_value_get_type(val_backgroundEl) != JSONObject) continue;
-      JSON_Object *obj_backgroundEl = json_value_get_object(val_backgroundEl);
-
-      if (!json_object_has_value_of_type(obj_backgroundEl, "type", JSONString)) continue;
-
-      if (!strcmp(json_object_get_string(obj_backgroundEl, "type"), "cloud")) {
-
-        if (!clouds) clouds = calloc(cloud_count+1, sizeof(struct game_obj_drawn));
-        clouds = realloc(clouds, (cloud_count+1) * sizeof(struct game_obj_drawn));
-
-        clouds[cloud_count].sprite.texture = displayScaling == 1 ? "1x" : "2x";
-        // clouds[cloud_count].sprite.
-
-        printf("Found backgroundEl\n");
-
-        cloud_count++;
-      } else {
-        // Unknown backgroundEl type
-        continue;
-      }
-
-
+    if (json_object_has_value_of_type(obj_spriteset, "cloud", JSONObject)) {
+      printf("Loading cloud sprite\n");
+      JSON_Object *obj_cloud = json_object_get_object(obj_spriteset, "cloud");
+      cloud_sourceX = json_object_get_number(obj_cloud, "x");
+      cloud_sourceY = json_object_get_number(obj_cloud, "y");
+      cloud_width   = json_object_get_number(obj_cloud, "w");
+      cloud_height  = json_object_get_number(obj_cloud, "h");
     }
 
+  }
 
+  // Load background elements
+  if (json_object_has_value_of_type(obj_config_root, "backgroundEl", JSONObject)) {
+    JSON_Object *obj_backgroundElements = json_object_get_object(obj_config_root, "backgroundEl");
+    if (json_object_has_value_of_type(obj_backgroundElements, "cloud", JSONObject)) {
+      JSON_Object *obj_backgroundCloud = json_object_get_object(obj_backgroundElements, "cloud");
 
+      cloud_count   = 0;
+      cloud_desired = (int)json_object_get_number(obj_backgroundCloud, "maxEls");
+      cloud_minY    = (int)json_object_get_number(obj_backgroundCloud, "minY");
+      cloud_maxY    = (int)json_object_get_number(obj_backgroundCloud, "maxY");
+      cloud_speed   = (int)json_object_get_number(obj_backgroundCloud, "speed");
+    }
+
+    // JSON_Array *arr_backgroundEl = json_object_get_array(obj_config_root, "backgroundEl");
+
+    // int backgroundElCount = json_array_get_count(arr_backgroundEl);
+    // for(int i=0; i<backgroundElCount; i++) {
+    //   JSON_Value *val_backgroundEl = json_array_get_value(arr_backgroundEl, i);
+    //   if (json_value_get_type(val_backgroundEl) != JSONObject) continue;
+    //   JSON_Object *obj_backgroundEl = json_value_get_object(val_backgroundEl);
+
+    //   if (!json_object_has_value_of_type(obj_backgroundEl, "type", JSONString)) continue;
+
+    //   if (!strcmp(json_object_get_string(obj_backgroundEl, "type"), "cloud")) {
+
+    //     if (!clouds) clouds = calloc(cloud_count+1, sizeof(struct game_obj_drawn));
+    //     clouds = realloc(clouds, (cloud_count+1) * sizeof(struct game_obj_drawn));
+
+    //     clouds[cloud_count].sprite.texture = displayScaling == 1 ? "1x" : "2x";
+    //     // clouds[cloud_count].sprite.
+
+    //     printf("Found backgroundEl\n");
+
+    //     cloud_count++;
+    //   } else {
+    //     // Unknown backgroundEl type
+    //     continue;
+    //   }
+    // }
   }
 
 
 
 
-  // // Add a cloud
-  // clouds = calloc(1, sizeof(struct game_obj_drawn));
-  // clouds[0].base.pos.x = displayWidth;
-  // clouds[0].base.pos.y = displayWidth;
+
+
+
+
+  game_state = GAME_STATE_START;
+
+  // Create initial clouds
+  clouds = calloc(cloud_desired, sizeof(void*));
+  while (cloud_count < cloud_desired) {
+    printf("Defining %d\n", cloud_count);
+
+    struct game_obj_drawn *_cloud = clouds[cloud_count] = (struct game_obj_drawn *)calloc(1, sizeof(struct game_obj_drawn));
+
+    _cloud->base.pos.x   = rand_between(0, display_width);
+    _cloud->base.pos.y   = rand_between(cloud_minY, cloud_maxY);
+    _cloud->base.speed.x = cloud_speed;
+    _cloud->el           = lv_image_create(lv_screen_active());
+
+    lv_obj_t *img = _cloud->el;
+    lv_image_set_src(img, buf_spritesheet);
+    lv_image_set_inner_align(img, LV_IMAGE_ALIGN_TOP_LEFT);
+    lv_image_set_offset_x(img, -cloud_sourceX);
+    lv_image_set_offset_y(img, -cloud_sourceY);
+    lv_obj_set_x(img, _cloud->base.pos.x * display_scaling);
+    lv_obj_set_y(img, _cloud->base.pos.y * display_scaling);
+    lv_obj_set_width(img, cloud_width);
+    lv_obj_set_height(img, cloud_height);
+
+    cloud_count++;
+  }
+
+
+
+
+
+
 
 
   // // Build horizon lines

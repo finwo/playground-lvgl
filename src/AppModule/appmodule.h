@@ -3,6 +3,7 @@
 
 #include "lvgl/lvgl.h"
 #include "kgabis/parson.h"
+#include "lvgl/src/misc/lv_types.h"
 
 // #include "lfs.h"
 
@@ -32,9 +33,19 @@ extern struct appmodule_asset *appmodule_assets;
 int appmodule_setup(JSON_Object *obj_config_root);
 void appmodule_loop(uint32_t elapsedTime);
 
+extern int time_window;
+extern int display_scaling;
+extern int display_width;
+extern int display_height;
 
+extern JSON_Object *obj_spritesheet;
+extern const lv_draw_buf_t *buf_spritesheet;
 
+#define GAME_STATE_START   0
+#define GAME_STATE_RUNNING 1
+#define GAME_STATE_DEAD    2
 
+extern int game_state;
 
 
 struct game_position {
@@ -46,6 +57,8 @@ struct game_position {
 struct game_velocity {
   int x;
   int y;
+  int x_tick;
+  int y_tick;
 };
 
 struct game_obj_base {
@@ -59,19 +72,30 @@ struct trait_sprite {
   int source_y;
   int width;
   int height;
+  int index;
 };
 
 struct game_obj_drawn {
   struct game_obj_base base;
   struct trait_sprite sprite;
+  lv_obj_t *el;
 };
 
 
-struct game_obj_drawn *clouds;
-int cloud_count;
+extern struct game_obj_drawn **clouds;
 
-struct game_obj_drawn *horizon_lines;
-int horizon_lines_count;
+extern int cloud_count;
+extern int cloud_desired;
+extern int cloud_minY;
+extern int cloud_maxY;
+extern int cloud_sourceX;
+extern int cloud_sourceY;
+extern int cloud_width;
+extern int cloud_height;
+extern int cloud_speed;
+
+extern struct game_obj_drawn *horizon_lines;
+extern int horizon_lines_count;
 
 
 

@@ -1,6 +1,9 @@
 
+#include "appmodule.h"
+#include "lvgl/src/core/lv_obj_pos.h"
 #include "lvgl/src/core/lv_obj_tree.h"
 #include "lvgl/src/display/lv_display.h"
+#include "lvgl/src/misc/lv_area.h"
 #include "lvgl/src/others/observer/lv_observer.h"
 #include "lvgl/src/widgets/image/lv_image.h"
 #include <math.h>
@@ -12,8 +15,7 @@ extern "C" {
 #include <stdio.h>
 
 #include "AppModule/appmodule.h"
-
-#define TIME_WINDOW 10000 // 10 seconds window
+#include "util/rng.h"
 
 int32_t horizon_speed  = -320;
 int32_t horizon_tick   =    0;
@@ -36,7 +38,43 @@ int32_t trex_offset =  0;
 
 
 void appmodule_loop(uint32_t elapsedTime) {
+  int i;
 
+  // Update clouds
+  for(i=0 ; i < cloud_count ; i++) {
+    struct game_obj_drawn *_cloud = clouds[i];
+
+    // Glide left (because speed.x<0)
+    _cloud->base.speed.x_tick += elapsedTime * _cloud->base.speed.x;
+    _cloud->base.pos.x        += _cloud->base.speed.x_tick / time_window;
+    _cloud->base.speed.x_tick  = _cloud->base.speed.x_tick % time_window;
+
+    // Out of bounds left = "respawn"
+    if ((_cloud->base.speed.x < 0) && (_cloud->base.pos.x < (0 - cloud_width / display_scaling))) {
+      _cloud->base.pos.x   = display_width;
+      _cloud->base.pos.y   = rand_between(cloud_minY, cloud_maxY);
+    }
+
+    // Out of bounds right = "respawn"
+    if ((_cloud->base.speed.x > 0) && (_cloud->base.pos.x > display_width)) {
+      _cloud->base.pos.x   = 0 - (cloud_width / display_scaling);
+      _cloud->base.pos.y   = rand_between(cloud_minY, cloud_maxY);
+    }
+
+    // Move the image itself
+    lv_obj_set_x(_cloud->el, (_cloud->base.pos.x * display_scaling) + (_cloud->base.speed.x_tick * display_scaling / time_window));
+    lv_obj_set_y(_cloud->el, (_cloud->base.pos.y * display_scaling) + (_cloud->base.speed.y_tick * display_scaling / time_window));
+
+    if (!i) {
+      printf("0: %d,%d -- %d\n", _cloud->base.pos.x, _cloud->base.pos.y, _cloud->base.speed.x_tick);
+    }
+  }
+
+
+  // // Add a cloud when not enough are present
+  // clouds = calloc(1, sizeof(struct game_obj_drawn));
+  // clouds[0].base.pos.x = displayWidth;
+  // clouds[0].base.pos.y = ;
 
 
 
