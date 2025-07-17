@@ -1,3 +1,6 @@
+#include "appmodule.h"
+#include "lvgl/src/core/lv_obj_scroll.h"
+#include "lvgl/src/display/lv_display.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -62,6 +65,16 @@ int cloud_width   = 0;
 int cloud_height  = 0;
 int cloud_speed   = 0;
 
+struct game_obj_drawn **horizon_lines;
+int horizon_line_count;
+int horizon_line_desired;
+int horizon_line_sourceX;
+int horizon_line_sourceY;
+int horizon_line_width;
+int horizon_line_height;
+int horizon_line_speed;
+int horizon_line_yPos = 0;
+
 // struct game_obj_drawn *horizon_lines;
 // int horizon_lines_count;
 
@@ -120,6 +133,12 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   }
 
   log_info("Logging driver initialized: %s\n", loglevel);
+
+  // Disable scrolling, we're a game, not an app
+  screen_main = lv_screen_active();
+  lv_obj_set_scrollbar_mode(screen_main, LV_SCROLLBAR_MODE_OFF);
+  lv_obj_set_size(screen_main, display_width, display_height);
+  lv_obj_remove_flag(screen_main, LV_OBJ_FLAG_SCROLLABLE);
 
   // Basic validation
   if (!json_object_has_value_of_type(obj_config_root, "config", JSONObject)) {
@@ -183,6 +202,15 @@ int appmodule_setup(JSON_Object *obj_config_root) {
       cloud_height  = json_object_get_number(obj_cloud, "h");
     }
 
+    if (json_object_has_value_of_type(obj_spriteset, "horizon", JSONObject)) {
+      printf("Loading horizon sprite\n");
+      JSON_Object *obj_horizon = json_object_get_object(obj_spriteset, "horizon");
+      horizon_line_sourceX = json_object_get_number(obj_horizon, "x");
+      horizon_line_sourceY = json_object_get_number(obj_horizon, "y");
+      horizon_line_width   = json_object_get_number(obj_horizon, "w");
+      horizon_line_height  = json_object_get_number(obj_horizon, "h");
+    }
+
   }
 
   // Load background elements
@@ -226,20 +254,19 @@ int appmodule_setup(JSON_Object *obj_config_root) {
     // }
   }
 
+  // Load ground information
+  if (json_object_has_value_of_type(obj_config_root, "lines", JSONObject)) {
+    JSON_Object *obj_lines = json_object_get_object(obj_config_root, "lines");
+    if (json_object_has_value_of_type(obj_lines, "yPos", JSONNumber)) {
+      horizon_line_yPos = (int)json_object_get_number(obj_lines, "yPos");
+    }
+  }
 
-
-
-
-
-
-
-  game_state = GAME_STATE_START;
+  game_state = GAME_STATE_WAITING;
 
   // Create initial clouds
   clouds = calloc(cloud_desired, sizeof(void*));
   while (cloud_count < cloud_desired) {
-    printf("Defining %d\n", cloud_count);
-
     struct game_obj_drawn *_cloud = clouds[cloud_count] = (struct game_obj_drawn *)calloc(1, sizeof(struct game_obj_drawn));
 
     _cloud->base.pos.x   = rand_between(0, display_width);
@@ -254,12 +281,42 @@ int appmodule_setup(JSON_Object *obj_config_root) {
     lv_image_set_offset_y(img, -cloud_sourceY);
     lv_obj_set_x(img, _cloud->base.pos.x * display_scaling);
     lv_obj_set_y(img, _cloud->base.pos.y * display_scaling);
-    lv_obj_set_width(img, cloud_width);
-    lv_obj_set_height(img, cloud_height);
+    lv_obj_set_size(img, cloud_width, cloud_height);
 
     cloud_count++;
   }
 
+
+  // Create ground lines
+  horizon_line_desired = 3;
+  horizon_lines = calloc(horizon_line_desired, sizeof(void*));
+  while(horizon_line_count < horizon_line_desired) {
+    struct game_obj_drawn *_horizon_line = horizon_lines[horizon_line_count] = (struct game_obj_drawn *)calloc(1, sizeof(struct game_obj_drawn));
+
+    _horizon_line->base.pos.x   = horizon_line_count * (horizon_line_width / display_scaling);
+    _horizon_line->base.pos.y   = horizon_line_yPos;
+    _horizon_line->base.speed.x = -50;
+    _horizon_line->el           = lv_image_create(lv_screen_active());
+
+    lv_obj_t *img = _horizon_line->el;
+    lv_image_set_src(img, buf_spritesheet);
+    lv_image_set_inner_align(img, LV_IMAGE_ALIGN_TOP_LEFT);
+    lv_image_set_offset_x(img, -horizon_line_sourceX);
+    lv_image_set_offset_y(img, -horizon_line_sourceY);
+    lv_obj_set_x(img, _horizon_line->base.pos.x * display_scaling);
+    lv_obj_set_y(img, _horizon_line->base.pos.y * display_scaling);
+    lv_obj_set_size(img, horizon_line_width, horizon_line_height);
+
+    horizon_line_count++;
+    printf("Created ground line # %d\n", horizon_line_count);
+  }
+
+
+// int horizon_line_count;
+// int horizon_line_desired;
+// int horizon_line_sourceX;
+// int horizon_line_sourceY;
+// int horizon_line_speed;
 
 
 

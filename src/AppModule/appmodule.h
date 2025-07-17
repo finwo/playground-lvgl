@@ -41,7 +41,7 @@ extern int display_height;
 extern JSON_Object *obj_spritesheet;
 extern const lv_draw_buf_t *buf_spritesheet;
 
-#define GAME_STATE_START   0
+#define GAME_STATE_WAITING 0
 #define GAME_STATE_RUNNING 1
 #define GAME_STATE_DEAD    2
 
@@ -94,8 +94,18 @@ extern int cloud_width;
 extern int cloud_height;
 extern int cloud_speed;
 
-extern struct game_obj_drawn *horizon_lines;
-extern int horizon_lines_count;
+
+extern struct game_obj_drawn **horizon_lines;
+extern int horizon_line_count;
+extern int horizon_line_desired;
+extern int horizon_line_yPos;
+extern int horizon_line_sourceX;
+extern int horizon_line_sourceY;
+extern int horizon_line_width;
+extern int horizon_line_height;
+extern int horizon_line_speed;
+
+
 
 
 

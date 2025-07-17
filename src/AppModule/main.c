@@ -65,9 +65,10 @@ void appmodule_loop(uint32_t elapsedTime) {
     lv_obj_set_x(_cloud->el, (_cloud->base.pos.x * display_scaling) + (_cloud->base.speed.x_tick * display_scaling / time_window));
     lv_obj_set_y(_cloud->el, (_cloud->base.pos.y * display_scaling) + (_cloud->base.speed.y_tick * display_scaling / time_window));
 
-    if (!i) {
-      printf("0: %d,%d -- %d\n", _cloud->base.pos.x, _cloud->base.pos.y, _cloud->base.speed.x_tick);
-    }
+    // if (!i) {
+    //   printf("0: %d,%d -- %d\n", _cloud->base.pos.x, _cloud->base.pos.y, _cloud->base.speed.x_tick);
+    // }
+
   }
 
 
