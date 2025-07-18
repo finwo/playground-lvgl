@@ -7,12 +7,13 @@
         "obstacle1"   : { "x": 228, "y":  2 },
         "obstacle2"   : { "x": 332, "y":  2 },
         "cloud"       : { "x":  86, "y":  2, "w":  46, "h": 14 },
-        "horizon"     : { "x":   2, "y": 54, "w": 600, "h": 12 },
+        "horizon"     : { "x":   2, "y": 54, "w": 300, "h": 12 },
         "moon"        : { "x": 484, "y":  2 },
         "pterodactyl" : { "x": 134, "y":  2 },
         "restart"     : { "x":   2, "y": 68 },
         "textSprite"  : { "x": 655, "y":  2 },
-        "runner"      : { "x": 848, "y":  2 },
+        "runner"      : { "x": 848, "y":  2, "w":  44, "h": 47 },
+        "runner_duck" : { "x": 848, "y": 19, "w":  59, "h": 30 },
         "star"        : { "x": 645, "y":  2 }
       }
     },
@@ -22,13 +23,14 @@
         "backgroundEl": { "x":  166, "y":   2 },
         "obstacle1"   : { "x":  446, "y":   2 },
         "obstacle2"   : { "x":  652, "y":   2 },
-        "cloud"       : { "x":  166, "y":   2, "w":   92, "h": 28 },
-        "horizon"     : { "x":    2, "y": 104, "w": 1200, "h": 24 },
+        "cloud"       : { "x":  166, "y":   2, "w":  92, "h": 28 },
+        "horizon"     : { "x":    2, "y": 104, "w": 600, "h": 24 },
         "moon"        : { "x":  954, "y":   2 },
         "pterodactyl" : { "x":  260, "y":   2 },
         "restart"     : { "x":    2, "y": 130 },
         "textSprite"  : { "x": 1294, "y":   2 },
-        "runner"      : { "x": 1678, "y":   2 },
+        "runner"      : { "x": 1678, "y":   2, "w":  88, "h": 94 },
+        "runner_duck" : { "x": 2206, "y":  36, "w": 118, "h": 60 },
         "star"        : { "x": 1276, "y":   2 }
       }
     }
@@ -45,7 +47,10 @@
     "maxGapCoefficient": 1.5,
     "maxObstacleLength": 3,
     "hasClouds": true,
-    "bottomPad": 10
+    "bottomPad": 10,
+
+    "speedStart": 6,
+    "speedMax": 13
   },
 
   "obstacles": [
@@ -104,16 +109,10 @@
       "minY"  : 30,
       "maxY"  : 71,
       "maxEls": 1,
-      "speed" : -50,
+      "speed" : 0.2,
 
-
-      "offset": 4,
-      "xPos"  : 1,
-      "yPos"  : 125,
-      "fixed" : false,
       "maxGap": 400,
-      "minGap": 100,
-      "pos"   : 0
+      "minGap": 100
     }
   },
 

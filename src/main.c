@@ -1,5 +1,6 @@
 #include "lvgl/src/drivers/sdl/lv_sdl_window.h"
 
+#include <SDL2/SDL_keyboard.h>
 #include <stdint.h>
 
 #ifdef _WIN32
@@ -41,12 +42,35 @@ int display_scaling;
 int display_width;
 int display_height;
 
+const bool *KEYS;
+
 #if LV_USE_LOG != 0
 static void lv_log_print_g_cb(lv_log_level_t level, const char * buf) {
     UNUSED(level);
     UNUSED(buf);
 }
 #endif
+
+// // Not an option, crashes lvgl because we rob the events
+// void handle_sdl_keyboard() {
+//   SDL_Event event;
+//   while (SDL_PollEvent(&event)) {
+//     switch (event.type) {
+//       case SDL_KEYDOWN:
+//         if (event.key.keysym.sym >= 0 && event.key.keysym.sym < 322) {
+//           KEYS[event.key.keysym.sym] = true;
+//         }
+//         break;
+//       case SDL_KEYUP:
+//         if (event.key.keysym.sym >= 0 && event.key.keysym.sym < 322) {
+//           KEYS[event.key.keysym.sym] = false;
+//         }
+//         break;
+//       default:
+//         break;
+//     }
+//   }
+// }
 
 #ifndef WINTERM
 #ifdef _WIN32
@@ -178,6 +202,11 @@ int main() {
   lvKeyboard   = lv_sdl_keyboard_create();
 
   lv_sdl_window_set_resizeable(lvDisplay, false);
+
+  // Setup keyboard handling
+  // No need to update in loop, points to SDL internal array
+  // No need to translate keycodes, we're following USB standard just like SDL
+  KEYS = (const bool *)SDL_GetKeyboardState(NULL);
 
   if (appmodule_setup(obj_root)) {
     log_fatal("Error setting up AppModule");

@@ -10,6 +10,13 @@
 // extern lfs_t      lfs;
 // extern lfs_file_t file;
 
+extern const bool *KEYS;
+
+#define APP_KEYCODE_ESCAPE 41
+#define APP_KEYCODE_SPACE  44
+#define APP_KEYCODE_DOWN   81
+#define APP_KEYCODE_UP     82
+
 extern lv_display_t *lvDisplay;
 extern lv_indev_t *lvMouse;
 extern lv_indev_t *lvMouseWheel;
@@ -41,12 +48,12 @@ extern int display_height;
 extern JSON_Object *obj_spritesheet;
 extern const lv_draw_buf_t *buf_spritesheet;
 
-#define GAME_STATE_WAITING 0
-#define GAME_STATE_RUNNING 1
-#define GAME_STATE_DEAD    2
+#define GAME_STATE_WAITING    0
+#define GAME_STATE_ANIM_INTRO 1
+#define GAME_STATE_RUNNING    2
+#define GAME_STATE_DEAD       3
 
 extern int game_state;
-
 
 struct game_position {
   int x;
@@ -104,6 +111,23 @@ extern int horizon_line_sourceY;
 extern int horizon_line_width;
 extern int horizon_line_height;
 extern int horizon_line_speed;
+
+extern double runner_speed_current;
+extern double runner_speed_start;
+
+extern struct game_obj_drawn *runner;
+
+extern int    runner_normal_sourceX;
+extern int    runner_normal_sourceY;
+extern int    runner_normal_width;
+extern int    runner_normal_height;
+
+extern int    runner_duck_sourceX;
+extern int    runner_duck_sourceY;
+extern int    runner_duck_width;
+extern int    runner_duck_height;
+
+
 
 
 

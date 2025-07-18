@@ -49,6 +49,9 @@ lv_obj_t *screen_main;
 
 int game_state;
 
+double runner_speed_current;
+double runner_speed_start;
+
 struct game_obj_drawn **clouds;
 const lv_draw_buf_t *buf_spritesheet;
 JSON_Object *obj_spritesheet;
@@ -74,6 +77,18 @@ int horizon_line_width;
 int horizon_line_height;
 int horizon_line_speed;
 int horizon_line_yPos = 0;
+
+struct game_obj_drawn *runner;
+
+int runner_normal_sourceX;
+int runner_normal_sourceY;
+int runner_normal_width;
+int runner_normal_height;
+
+int runner_duck_sourceX;
+int runner_duck_sourceY;
+int runner_duck_width;
+int runner_duck_height;
 
 // struct game_obj_drawn *horizon_lines;
 // int horizon_lines_count;
@@ -155,6 +170,9 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   time_window = (int)json_object_get_number(obj__config, "timeWindow");
   time_window = time_window ? time_window : 10000;
 
+  // Load runner information
+  runner_speed_start = json_object_get_number(obj__config, "startSpeed");
+
   // Get the spritesheet config
   char *target_spritesheet = NULL;
   asprintf(&target_spritesheet, "%dx", display_scaling);
@@ -211,6 +229,24 @@ int appmodule_setup(JSON_Object *obj_config_root) {
       horizon_line_height  = json_object_get_number(obj_horizon, "h");
     }
 
+    if (json_object_has_value_of_type(obj_spriteset, "runner", JSONObject)) {
+      printf("Loading runner sprite\n");
+      JSON_Object *obj_runner_normal = json_object_get_object(obj_spriteset, "runner");
+      runner_normal_sourceX = json_object_get_number(obj_runner_normal, "x");
+      runner_normal_sourceY = json_object_get_number(obj_runner_normal, "y");
+      runner_normal_width   = json_object_get_number(obj_runner_normal, "w");
+      runner_normal_height  = json_object_get_number(obj_runner_normal, "h");
+    }
+
+    if (json_object_has_value_of_type(obj_spriteset, "runner_duck", JSONObject)) {
+      printf("Loading runner_duck sprite\n");
+      JSON_Object *obj_runner_duck = json_object_get_object(obj_spriteset, "runner_duck");
+      runner_duck_sourceX = json_object_get_number(obj_runner_duck, "x");
+      runner_duck_sourceY = json_object_get_number(obj_runner_duck, "y");
+      runner_duck_width   = json_object_get_number(obj_runner_duck, "w");
+      runner_duck_height  = json_object_get_number(obj_runner_duck, "h");
+    }
+
   }
 
   // Load background elements
@@ -225,33 +261,6 @@ int appmodule_setup(JSON_Object *obj_config_root) {
       cloud_maxY    = (int)json_object_get_number(obj_backgroundCloud, "maxY");
       cloud_speed   = (int)json_object_get_number(obj_backgroundCloud, "speed");
     }
-
-    // JSON_Array *arr_backgroundEl = json_object_get_array(obj_config_root, "backgroundEl");
-
-    // int backgroundElCount = json_array_get_count(arr_backgroundEl);
-    // for(int i=0; i<backgroundElCount; i++) {
-    //   JSON_Value *val_backgroundEl = json_array_get_value(arr_backgroundEl, i);
-    //   if (json_value_get_type(val_backgroundEl) != JSONObject) continue;
-    //   JSON_Object *obj_backgroundEl = json_value_get_object(val_backgroundEl);
-
-    //   if (!json_object_has_value_of_type(obj_backgroundEl, "type", JSONString)) continue;
-
-    //   if (!strcmp(json_object_get_string(obj_backgroundEl, "type"), "cloud")) {
-
-    //     if (!clouds) clouds = calloc(cloud_count+1, sizeof(struct game_obj_drawn));
-    //     clouds = realloc(clouds, (cloud_count+1) * sizeof(struct game_obj_drawn));
-
-    //     clouds[cloud_count].sprite.texture = displayScaling == 1 ? "1x" : "2x";
-    //     // clouds[cloud_count].sprite.
-
-    //     printf("Found backgroundEl\n");
-
-    //     cloud_count++;
-    //   } else {
-    //     // Unknown backgroundEl type
-    //     continue;
-    //   }
-    // }
   }
 
   // Load ground information
@@ -261,8 +270,6 @@ int appmodule_setup(JSON_Object *obj_config_root) {
       horizon_line_yPos = (int)json_object_get_number(obj_lines, "yPos");
     }
   }
-
-  game_state = GAME_STATE_WAITING;
 
   // Create initial clouds
   clouds = calloc(cloud_desired, sizeof(void*));
@@ -288,14 +295,14 @@ int appmodule_setup(JSON_Object *obj_config_root) {
 
 
   // Create ground lines
-  horizon_line_desired = 3;
+  horizon_line_desired = display_width / (horizon_line_width/display_scaling) + 2;
   horizon_lines = calloc(horizon_line_desired, sizeof(void*));
   while(horizon_line_count < horizon_line_desired) {
     struct game_obj_drawn *_horizon_line = horizon_lines[horizon_line_count] = (struct game_obj_drawn *)calloc(1, sizeof(struct game_obj_drawn));
 
     _horizon_line->base.pos.x   = horizon_line_count * (horizon_line_width / display_scaling);
     _horizon_line->base.pos.y   = horizon_line_yPos;
-    _horizon_line->base.speed.x = -50;
+    _horizon_line->base.speed.x = -1000;
     _horizon_line->el           = lv_image_create(lv_screen_active());
 
     lv_obj_t *img = _horizon_line->el;
@@ -311,52 +318,28 @@ int appmodule_setup(JSON_Object *obj_config_root) {
     printf("Created ground line # %d\n", horizon_line_count);
   }
 
+  // Create runner
+  runner = calloc(1, sizeof(struct game_obj_drawn));
 
-// int horizon_line_count;
-// int horizon_line_desired;
-// int horizon_line_sourceX;
-// int horizon_line_sourceY;
-// int horizon_line_speed;
+  // Why does this base.pos.y work to put trex's feet halfway the ground??
+  runner->base.pos.x = 0;
+  runner->base.pos.y = horizon_line_yPos + (horizon_line_height/display_scaling) - (runner_normal_height/display_scaling);
+  runner->el         = lv_image_create(lv_screen_active());
 
+  lv_obj_t *img = runner->el;
+  lv_image_set_src(img, buf_spritesheet);
+  lv_image_set_inner_align(img, LV_IMAGE_ALIGN_TOP_LEFT);
+  lv_image_set_offset_x(img, -runner_normal_sourceX);
+  lv_image_set_offset_y(img, -runner_normal_sourceY);
+  lv_obj_set_x(img, runner->base.pos.x * display_scaling);
+  lv_obj_set_y(img, runner->base.pos.y * display_scaling);
+  lv_obj_set_size(img, runner_normal_width, runner_normal_height);
 
-
-
-
-
-
-  // // Build horizon lines
-  // horizon_lines = calloc(
-
-
-
-
-
-  // int key_count = json_object_get_count(config_root_obj);
-  // for(int i = 0; i < key_count; i++) {
-  //   printf("config has key: %s\n", json_object_get_name(config_root_obj, i));
-  // }
-
-
-
-     // if (json_value_get_type(root_value) != JSONArray) {
-     //    system(cleanup_command);
-     //    return;
-    // }
-
-    // /* parsing json and validating output */
-    // root_value = json_parse_file(output_filename);
-    // if (json_value_get_type(root_value) != JSONArray) {
-    //     system(cleanup_command);
-    //     return;
-    // }
-
-
-
-  // printf("Config: %s\n", globalConfigContents->data);
-
+  // Set the game_state so the main loop knows what to do
+  game_state = GAME_STATE_WAITING;
 
   // struct xml_document* globalXmlDocument = xml_parse_document(globalXmlContents->data, globalXmlContents->len);
-	// struct xml_node* globalXmlRoot = xml_document_root(globalXmlDocument);
+  // struct xml_node* globalXmlRoot = xml_document_root(globalXmlDocument);
 
   // struct xml_string *root_tagname = xml_node_name(globalXmlRoot);
 
