@@ -20,6 +20,7 @@ override LDFLAGS?=
 override CPPFLAGS?=
 
 override LDFLAGS+=$(shell pkg-config --libs sdl2)
+override LDFLAGS+=-lm
 
 # override CFLAGS+=-D WEBVIEW_STATIC
 # override CFLAGS+=-D WINTERM
@@ -85,6 +86,7 @@ includeFiles:=
 includeFiles+=src/AppModule/assets/global.json
 includeFiles+=src/AppModule/assets/offline-resources-1x.png
 includeFiles+=src/AppModule/assets/offline-resources-2x.png
+includeFiles+=src/AppModule/assets/public-pixel.ttf
 includeFiles+=$(wildcard src/*/screens/*.xml)
 
 .PHONY: default

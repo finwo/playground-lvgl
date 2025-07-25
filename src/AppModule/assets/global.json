@@ -3,18 +3,19 @@
     "1x": {
       "texture": "offline-resources-1x.png",
       "spriteset": {
-        "backgroundEl": { "x":  86, "y":  2 },
-        "obstacle1"   : { "x": 228, "y":  2 },
-        "obstacle2"   : { "x": 332, "y":  2 },
-        "cloud"       : { "x":  86, "y":  2, "w":  46, "h": 14 },
-        "horizon"     : { "x":   2, "y": 54, "w": 300, "h": 12 },
-        "moon"        : { "x": 484, "y":  2 },
-        "pterodactyl" : { "x": 134, "y":  2 },
-        "restart"     : { "x":   2, "y": 68 },
-        "textSprite"  : { "x": 655, "y":  2 },
-        "runner"      : { "x": 848, "y":  2, "w":  44, "h": 47 },
-        "runner_duck" : { "x": 848, "y": 19, "w":  59, "h": 30 },
-        "star"        : { "x": 645, "y":  2 }
+        "backgroundEl": { "x":   86, "y":  2 },
+        "obstacle1"   : { "x":  228, "y":  2 },
+        "obstacle2"   : { "x":  332, "y":  2 },
+        "cloud"       : { "x":   86, "y":  2, "w":  46, "h": 14 },
+        "horizon"     : { "x":    2, "y": 54, "w": 300, "h": 12 },
+        "moon"        : { "x":  484, "y":  2 },
+        "pterodactyl" : { "x":  134, "y":  2 },
+        "restart"     : { "x":    2, "y": 68 },
+        "textSprite"  : { "x":  655, "y":  2 },
+        "runner_idle" : { "x":  848, "y":  2, "w":  44, "h": 47, "c": 1 },
+        "runner_walk" : { "x":  936, "y":  2, "w":  44, "h": 47, "c": 2 },
+        "runner_duck" : { "x": 1112, "y": 19, "w":  59, "h": 30, "c": 2 },
+        "star"        : { "x":  645, "y":  2 }
       }
     },
     "2x": {
@@ -29,8 +30,9 @@
         "pterodactyl" : { "x":  260, "y":   2 },
         "restart"     : { "x":    2, "y": 130 },
         "textSprite"  : { "x": 1294, "y":   2 },
-        "runner"      : { "x": 1678, "y":   2, "w":  88, "h": 94 },
-        "runner_duck" : { "x": 2206, "y":  36, "w": 118, "h": 60 },
+        "runner_idle" : { "x": 1678, "y":   2, "w":  88, "h": 94, "c": 1 },
+        "runner_walk" : { "x": 1854, "y":   2, "w":  88, "h": 94, "c": 2 },
+        "runner_duck" : { "x": 2206, "y":  36, "w": 118, "h": 60, "c": 2 },
         "star"        : { "x": 1276, "y":   2 }
       }
     }
@@ -48,6 +50,8 @@
     "maxObstacleLength": 3,
     "hasClouds": true,
     "bottomPad": 10,
+    "fontFile": "public-pixel.ttf",
+    "fontSize": 14,
 
     "speedStart": 6,
     "speedMax": 13

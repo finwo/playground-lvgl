@@ -25,7 +25,10 @@ int32_t trex_speed  = -10;
 int32_t trex_tick   =  0;
 int32_t trex_offset =  0;
 
-int32_t anim_start_move_duration = 500;
+const int32_t anim_start_move_duration = 500;
+const int32_t anim_start_move_steps    =   5;
+
+int32_t anim_trex_substep = 0;
 
 // int _get_asset_idx_by_name(const char *name) {
 //   for(int i = 0; appmodule_assets[i].name; i++) {
@@ -51,19 +54,23 @@ void appmodule_loop(uint32_t elapsedTime) {
   } else if (game_state == GAME_STATE_ANIM_INTRO) {
 
     // Move the runner into position in 500ms
-    if (runner->base.pos.x < (runner_normal_width/display_scaling/2)) {
+    if (runner->base.pos.x < (runner_idle_width/display_scaling/2)) {
 
-      // Smooth walk
-      runner->base.speed.x_tick += elapsedTime * (runner_normal_width/display_scaling/2)*time_window/anim_start_move_duration;
+      // Move the trex
+      runner->base.speed.x_tick += elapsedTime * (runner_idle_width/display_scaling/2)*time_window/anim_start_move_duration;
       runner->base.pos.x        += runner->base.speed.x_tick / time_window;
       runner->base.speed.x_tick  = runner->base.speed.x_tick % time_window;
       // Move the image itself
       lv_obj_set_x(runner->el, (runner->base.pos.x * display_scaling) + (runner->base.speed.x_tick * display_scaling / time_window));
       lv_obj_set_y(runner->el, (runner->base.pos.y * display_scaling) + (runner->base.speed.y_tick * display_scaling / time_window));
+
+      // Animate trex
+      anim_trex_substep += anim_start_move_steps * elapsedTime;
+
     } else {
 
       // Ensure the runner is properly aligned
-      runner->base.pos.x        = runner_normal_width/display_scaling/2;
+      runner->base.pos.x        = runner_idle_width/display_scaling/2;
       runner->base.speed.x_tick = 0;
       lv_obj_set_x(runner->el, (runner->base.pos.x * display_scaling));
 

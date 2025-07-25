@@ -1,6 +1,10 @@
 #include "appmodule.h"
 #include "lvgl/src/core/lv_obj_scroll.h"
 #include "lvgl/src/display/lv_display.h"
+#include "lvgl/src/libs/tiny_ttf/lv_tiny_ttf.h"
+#include "lvgl/src/misc/lv_area.h"
+#include "lvgl/src/misc/lv_style_gen.h"
+#include "lvgl/src/misc/lv_text.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -80,15 +84,26 @@ int horizon_line_yPos = 0;
 
 struct game_obj_drawn *runner;
 
-int runner_normal_sourceX;
-int runner_normal_sourceY;
-int runner_normal_width;
-int runner_normal_height;
+int runner_idle_sourceX;
+int runner_idle_sourceY;
+int runner_idle_width;
+int runner_idle_height;
+int runner_idle_count;
+
+int runner_walk_sourceX;
+int runner_walk_sourceY;
+int runner_walk_width;
+int runner_walk_height;
+int runner_walk_count;
 
 int runner_duck_sourceX;
 int runner_duck_sourceY;
 int runner_duck_width;
 int runner_duck_height;
+int runner_duck_count;
+
+lv_obj_t *label_hiscore;
+lv_obj_t *label_score;
 
 // struct game_obj_drawn *horizon_lines;
 // int horizon_lines_count;
@@ -127,6 +142,7 @@ int runner_duck_height;
 
 int appmodule_setup(JSON_Object *obj_config_root) {
   const char *loglevel = "trace";
+  char *appDir = dirname(get_bin_path());
 
   if (0) {
     // Intentionally empty
@@ -170,6 +186,49 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   time_window = (int)json_object_get_number(obj__config, "timeWindow");
   time_window = time_window ? time_window : 10000;
 
+  // Check for font config existing
+  if (!json_object_has_value_of_type(obj__config, "fontFile", JSONString)) {
+    log_fatal("'fontFile' configuration missing");
+    exit(1);
+  }
+  if (!json_object_has_value_of_type(obj__config, "fontSize", JSONNumber)) {
+    log_fatal("'fontSize' configuration missing");
+    exit(1);
+  }
+
+  // Check if we can load the font
+  char *font_file;
+  asprintf(&font_file, "%s/assets/%s", appDir, json_object_get_string(obj__config, "fontFile"));
+  log_debug("Target font file: %s\n", font_file);
+  if (!file_exists(font_file, "r")) {
+    log_fatal("Font file could not be read");
+    exit(1);
+  }
+
+  // Actually load the font
+  int font_size = json_object_get_number(obj__config, "fontSize") * display_scaling;
+  struct buf *font_data = file_get_contents(font_file);
+  lv_font_t *customFont = lv_tiny_ttf_create_data(font_data->data, font_data->len, font_size);
+  lv_style_t *fontStyle = calloc(1, sizeof(lv_style_t));
+  lv_style_init(fontStyle);
+  lv_style_set_text_font(fontStyle, customFont);
+  lv_obj_add_style(lv_screen_active(), fontStyle, 0);
+
+  // Build the scoring labels
+  label_hiscore = lv_label_create(lv_screen_active());
+  label_score = lv_label_create(lv_screen_active());
+  lv_obj_set_align(label_hiscore, LV_ALIGN_TOP_RIGHT);
+  lv_obj_set_align(label_score, LV_ALIGN_TOP_RIGHT);
+  lv_obj_set_pos(label_hiscore, 0, font_size);
+  lv_obj_set_pos(label_score, 0, 0);
+  lv_label_set_text(label_score, "00000");
+  lv_label_set_text(label_hiscore, "HI 00000");
+
+  static lv_style_t hiscoreStyle;
+  lv_style_init(&hiscoreStyle);
+  lv_style_set_text_color(&hiscoreStyle, lv_color_hex(0xAAAAAA));
+  lv_obj_add_style(label_hiscore, &hiscoreStyle, 0);
+
   // Load runner information
   runner_speed_start = json_object_get_number(obj__config, "startSpeed");
 
@@ -189,7 +248,6 @@ int appmodule_setup(JSON_Object *obj_config_root) {
     log_fatal("Spritesheet '%s' is missing 'texture' field", target_spritesheet);
     exit(1);
   }
-  char *appDir = dirname(get_bin_path());
   char *texturePath = NULL;
   asprintf(&texturePath, "%s/assets/%s", appDir, json_object_get_string(obj_spritesheet, "texture"));
   struct buf *encodedData = file_get_contents(texturePath);
@@ -229,13 +287,24 @@ int appmodule_setup(JSON_Object *obj_config_root) {
       horizon_line_height  = json_object_get_number(obj_horizon, "h");
     }
 
-    if (json_object_has_value_of_type(obj_spriteset, "runner", JSONObject)) {
-      printf("Loading runner sprite\n");
-      JSON_Object *obj_runner_normal = json_object_get_object(obj_spriteset, "runner");
-      runner_normal_sourceX = json_object_get_number(obj_runner_normal, "x");
-      runner_normal_sourceY = json_object_get_number(obj_runner_normal, "y");
-      runner_normal_width   = json_object_get_number(obj_runner_normal, "w");
-      runner_normal_height  = json_object_get_number(obj_runner_normal, "h");
+    if (json_object_has_value_of_type(obj_spriteset, "runner_idle", JSONObject)) {
+      printf("Loading runner idle sprite\n");
+      JSON_Object *obj_runner_idle = json_object_get_object(obj_spriteset, "runner_idle");
+      runner_idle_sourceX = json_object_get_number(obj_runner_idle, "x");
+      runner_idle_sourceY = json_object_get_number(obj_runner_idle, "y");
+      runner_idle_width   = json_object_get_number(obj_runner_idle, "w");
+      runner_idle_height  = json_object_get_number(obj_runner_idle, "h");
+      runner_idle_count   = json_object_get_number(obj_runner_idle, "c");
+    }
+
+    if (json_object_has_value_of_type(obj_spriteset, "runner_walk", JSONObject)) {
+      printf("Loading runner walk sprite\n");
+      JSON_Object *obj_runner_walk = json_object_get_object(obj_spriteset, "runner_walk");
+      runner_walk_sourceX = json_object_get_number(obj_runner_walk, "x");
+      runner_walk_sourceY = json_object_get_number(obj_runner_walk, "y");
+      runner_walk_width   = json_object_get_number(obj_runner_walk, "w");
+      runner_walk_height  = json_object_get_number(obj_runner_walk, "h");
+      runner_walk_count   = json_object_get_number(obj_runner_walk, "c");
     }
 
     if (json_object_has_value_of_type(obj_spriteset, "runner_duck", JSONObject)) {
@@ -245,6 +314,7 @@ int appmodule_setup(JSON_Object *obj_config_root) {
       runner_duck_sourceY = json_object_get_number(obj_runner_duck, "y");
       runner_duck_width   = json_object_get_number(obj_runner_duck, "w");
       runner_duck_height  = json_object_get_number(obj_runner_duck, "h");
+      runner_duck_count   = json_object_get_number(obj_runner_duck, "c");
     }
 
   }
@@ -323,17 +393,17 @@ int appmodule_setup(JSON_Object *obj_config_root) {
 
   // Why does this base.pos.y work to put trex's feet halfway the ground??
   runner->base.pos.x = 0;
-  runner->base.pos.y = horizon_line_yPos + (horizon_line_height/display_scaling) - (runner_normal_height/display_scaling);
+  runner->base.pos.y = horizon_line_yPos + (horizon_line_height/display_scaling) - (runner_idle_height/display_scaling);
   runner->el         = lv_image_create(lv_screen_active());
 
   lv_obj_t *img = runner->el;
   lv_image_set_src(img, buf_spritesheet);
   lv_image_set_inner_align(img, LV_IMAGE_ALIGN_TOP_LEFT);
-  lv_image_set_offset_x(img, -runner_normal_sourceX);
-  lv_image_set_offset_y(img, -runner_normal_sourceY);
+  lv_image_set_offset_x(img, -runner_idle_sourceX);
+  lv_image_set_offset_y(img, -runner_idle_sourceY);
   lv_obj_set_x(img, runner->base.pos.x * display_scaling);
   lv_obj_set_y(img, runner->base.pos.y * display_scaling);
-  lv_obj_set_size(img, runner_normal_width, runner_normal_height);
+  lv_obj_set_size(img, runner_idle_width, runner_idle_height);
 
   // Set the game_state so the main loop knows what to do
   game_state = GAME_STATE_WAITING;

@@ -117,23 +117,25 @@ extern double runner_speed_start;
 
 extern struct game_obj_drawn *runner;
 
-extern int    runner_normal_sourceX;
-extern int    runner_normal_sourceY;
-extern int    runner_normal_width;
-extern int    runner_normal_height;
+extern int    runner_idle_sourceX;
+extern int    runner_idle_sourceY;
+extern int    runner_idle_width;
+extern int    runner_idle_height;
+extern int    runner_idle_count;
+
+extern int    runner_walk_sourceX;
+extern int    runner_walk_sourceY;
+extern int    runner_walk_width;
+extern int    runner_walk_height;
+extern int    runner_walk_count;
 
 extern int    runner_duck_sourceX;
 extern int    runner_duck_sourceY;
 extern int    runner_duck_width;
 extern int    runner_duck_height;
+extern int    runner_duck_count;
 
-
-
-
-
-
-
-
-
+extern lv_obj_t *label_hiscore;
+extern lv_obj_t *label_score;
 
 #endif // __APPMODULE_H__
