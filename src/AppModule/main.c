@@ -128,11 +128,26 @@ void appmodule_loop(uint32_t elapsedTime) {
     anim_runner_substep += runner_speed_current * time_window / 1000 * elapsedTime;
     anim_runner_step    += anim_runner_substep / time_window;
     anim_runner_substep  = anim_runner_substep % time_window;
-    anim_runner_step     = anim_runner_step % runner_walk_count;
-    lv_image_set_offset_x(runner->el, -runner_walk_sourceX - (runner_walk_width*anim_runner_step));
+    anim_runner_step     = anim_runner_step % (runner_walk_count*runner_duck_count);
+
+    // Normal walking sprite
+    lv_image_set_offset_x(runner->el, -runner_walk_sourceX - (runner_walk_width*(anim_runner_step%runner_walk_count)));
     lv_image_set_offset_y(runner->el, -runner_walk_sourceY);
     lv_obj_set_width(runner->el, runner_walk_width);
     lv_obj_set_height(runner->el, runner_walk_height);
+
+    // Allow the runner to duck
+    if (KEYS[APP_KEYCODE_DOWN]) {
+      lv_image_set_offset_x(runner->el, -runner_duck_sourceX - (runner_duck_width*(anim_runner_step%runner_duck_count)));
+      lv_image_set_offset_y(runner->el, -runner_duck_sourceY);
+      lv_obj_set_width(runner->el, runner_duck_width);
+      lv_obj_set_height(runner->el, runner_duck_height);
+      lv_obj_set_pos(
+        runner->el,
+        (runner->base.pos.x * display_scaling) + (runner->base.speed.x_tick * display_scaling / time_window) + ((runner_walk_width - runner_duck_width)/2),
+        (runner->base.pos.y * display_scaling) + (runner->base.speed.y_tick * display_scaling / time_window) + (runner_walk_height - runner_duck_height)
+      );
+    }
 
     // Jumping = different sprite, offset sprite if needed
     if (runner->base.pos.y != runner_groundY) {

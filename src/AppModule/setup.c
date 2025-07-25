@@ -178,6 +178,7 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   screen_main = lv_screen_active();
   lv_obj_set_scrollbar_mode(screen_main, LV_SCROLLBAR_MODE_OFF);
   lv_obj_set_size(screen_main, display_width, display_height);
+  lv_obj_set_style_bg_color(screen_main, lv_color_hex(0xFFFFFF), 0); // TODO: fetch bg color from json
   lv_obj_remove_flag(screen_main, LV_OBJ_FLAG_SCROLLABLE);
 
   // Basic validation
