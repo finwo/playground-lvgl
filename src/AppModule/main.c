@@ -131,11 +131,15 @@ void appmodule_loop(uint32_t elapsedTime) {
     anim_runner_step     = anim_runner_step % runner_walk_count;
     lv_image_set_offset_x(runner->el, -runner_walk_sourceX - (runner_walk_width*anim_runner_step));
     lv_image_set_offset_y(runner->el, -runner_walk_sourceY);
+    lv_obj_set_width(runner->el, runner_walk_width);
+    lv_obj_set_height(runner->el, runner_walk_height);
 
     // Jumping = different sprite, offset sprite if needed
     if (runner->base.pos.y != runner_groundY) {
       lv_image_set_offset_x(runner->el, -runner_jump_sourceX);
       lv_image_set_offset_y(runner->el, -runner_jump_sourceY);
+      lv_obj_set_width(runner->el, runner_jump_width);
+      lv_obj_set_height(runner->el, runner_jump_height);
       lv_obj_set_pos(
         runner->el,
         (runner->base.pos.x * display_scaling) + (runner->base.speed.x_tick * display_scaling / time_window) + ((runner_walk_width - runner_jump_width)/2),
