@@ -94,6 +94,13 @@ void appmodule_loop(uint32_t elapsedTime) {
 
   } else if (game_state == GAME_STATE_RUNNING) {
 
+    // Animate runner
+    anim_runner_substep += runner_speed_current * time_window / 1000 * elapsedTime;
+    anim_runner_step    += anim_runner_substep / time_window;
+    anim_runner_substep  = anim_runner_substep % time_window;
+    anim_runner_step     = anim_runner_step % runner_walk_count;
+    lv_image_set_offset_x(runner->el, -runner_walk_sourceX - (runner_walk_width*anim_runner_step));
+
     // Update ground
     for(i=0; i < horizon_line_count ; i++) {
       struct game_obj_drawn *_horizon_line = horizon_lines[i];
@@ -113,8 +120,6 @@ void appmodule_loop(uint32_t elapsedTime) {
       lv_obj_set_x(_horizon_line->el, (_horizon_line->base.pos.x * display_scaling) + (_horizon_line->base.speed.x_tick * display_scaling / time_window));
       lv_obj_set_y(_horizon_line->el, (_horizon_line->base.pos.y * display_scaling) + (_horizon_line->base.speed.y_tick * display_scaling / time_window));
     }
-
-
 
     // Update clouds
     for(i=0 ; i < cloud_count ; i++) {
