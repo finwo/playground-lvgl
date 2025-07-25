@@ -226,7 +226,7 @@ int appmodule_setup(JSON_Object *obj_config_root) {
 
   static lv_style_t hiscoreStyle;
   lv_style_init(&hiscoreStyle);
-  lv_style_set_text_color(&hiscoreStyle, lv_color_hex(0xAAAAAA));
+  lv_style_set_text_color(&hiscoreStyle, lv_color_hex(0x999999));
   lv_obj_add_style(label_hiscore, &hiscoreStyle, 0);
 
   // Load runner information

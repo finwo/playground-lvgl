@@ -14,6 +14,8 @@ extern "C" {
 #include <stdint.h>
 #include <stdio.h>
 
+#include "rxi/log.h"
+
 #include "AppModule/appmodule.h"
 #include "util/rng.h"
 
@@ -26,9 +28,10 @@ int32_t trex_tick   =  0;
 int32_t trex_offset =  0;
 
 const int32_t anim_start_move_duration = 500;
-const int32_t anim_start_move_steps    =   5;
+const int32_t anim_start_move_steps    =   3;
 
-int32_t anim_trex_substep = 0;
+int32_t anim_runner_substep = 0;
+int32_t anim_runner_step    = 0;
 
 // int _get_asset_idx_by_name(const char *name) {
 //   for(int i = 0; appmodule_assets[i].name; i++) {
@@ -45,8 +48,11 @@ void appmodule_loop(uint32_t elapsedTime) {
 
     // Space pressed = go to intro animation
     if (KEYS[APP_KEYCODE_SPACE]) {
-      printf("Space was pressed, starting...\n");
+      log_trace("Space was pressed, starting");
       game_state = GAME_STATE_ANIM_INTRO;
+
+      lv_image_set_offset_x(runner->el, -runner_walk_sourceX);
+      lv_image_set_offset_y(runner->el, -runner_walk_sourceY);
     }
 
     // No game actions during wait
@@ -56,7 +62,7 @@ void appmodule_loop(uint32_t elapsedTime) {
     // Move the runner into position in 500ms
     if (runner->base.pos.x < (runner_idle_width/display_scaling/2)) {
 
-      // Move the trex
+      // Move the runner
       runner->base.speed.x_tick += elapsedTime * (runner_idle_width/display_scaling/2)*time_window/anim_start_move_duration;
       runner->base.pos.x        += runner->base.speed.x_tick / time_window;
       runner->base.speed.x_tick  = runner->base.speed.x_tick % time_window;
@@ -64,8 +70,12 @@ void appmodule_loop(uint32_t elapsedTime) {
       lv_obj_set_x(runner->el, (runner->base.pos.x * display_scaling) + (runner->base.speed.x_tick * display_scaling / time_window));
       lv_obj_set_y(runner->el, (runner->base.pos.y * display_scaling) + (runner->base.speed.y_tick * display_scaling / time_window));
 
-      // Animate trex
-      anim_trex_substep += anim_start_move_steps * elapsedTime;
+      // Animate runner
+      anim_runner_substep += anim_start_move_steps * elapsedTime;
+      anim_runner_step    += anim_runner_substep / anim_start_move_duration;
+      anim_runner_substep  = anim_runner_substep % anim_start_move_duration;
+      anim_runner_step     = anim_runner_step % runner_walk_count;
+      lv_image_set_offset_x(runner->el, -runner_walk_sourceX - (runner_walk_width*anim_runner_step));
 
     } else {
 
