@@ -25,6 +25,8 @@ int32_t trex_speed  = -10;
 int32_t trex_tick   =  0;
 int32_t trex_offset =  0;
 
+int32_t anim_start_move_duration = 500;
+
 // int _get_asset_idx_by_name(const char *name) {
 //   for(int i = 0; appmodule_assets[i].name; i++) {
 //     if (strcmp(name, appmodule_assets[i].name)) continue;
@@ -52,7 +54,7 @@ void appmodule_loop(uint32_t elapsedTime) {
     if (runner->base.pos.x < (runner_normal_width/display_scaling/2)) {
 
       // Smooth walk
-      runner->base.speed.x_tick += elapsedTime * (runner_normal_width/display_scaling/2)*time_window/500;
+      runner->base.speed.x_tick += elapsedTime * (runner_normal_width/display_scaling/2)*time_window/anim_start_move_duration;
       runner->base.pos.x        += runner->base.speed.x_tick / time_window;
       runner->base.speed.x_tick  = runner->base.speed.x_tick % time_window;
       // Move the image itself
