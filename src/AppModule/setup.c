@@ -56,6 +56,7 @@ int game_state;
 double runner_speed_current;
 double runner_speed_start;
 double runner_speed_max;
+int    runner_groundY;
 
 struct game_obj_drawn **clouds;
 const lv_draw_buf_t *buf_spritesheet;
@@ -91,6 +92,12 @@ int runner_idle_sourceY;
 int runner_idle_width;
 int runner_idle_height;
 int runner_idle_count;
+
+int runner_jump_sourceX;
+int runner_jump_sourceY;
+int runner_jump_width;
+int runner_jump_height;
+int runner_jump_count;
 
 int runner_walk_sourceX;
 int runner_walk_sourceY;
@@ -277,10 +284,9 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   // Load sprite info
   if (json_object_has_value_of_type(obj_spritesheet, "spriteset", JSONObject)) {
     JSON_Object *obj_spriteset = json_object_get_object(obj_spritesheet, "spriteset");
-    printf("Loading cloud spriteset\n");
 
     if (json_object_has_value_of_type(obj_spriteset, "cloud", JSONObject)) {
-      printf("Loading cloud sprite\n");
+      log_trace("Loading cloud sprite");
       JSON_Object *obj_cloud = json_object_get_object(obj_spriteset, "cloud");
       cloud_sourceX = json_object_get_number(obj_cloud, "x");
       cloud_sourceY = json_object_get_number(obj_cloud, "y");
@@ -289,7 +295,7 @@ int appmodule_setup(JSON_Object *obj_config_root) {
     }
 
     if (json_object_has_value_of_type(obj_spriteset, "horizon", JSONObject)) {
-      printf("Loading horizon sprite\n");
+      log_trace("Loading horizon sprite");
       JSON_Object *obj_horizon = json_object_get_object(obj_spriteset, "horizon");
       horizon_line_sourceX      = json_object_get_number(obj_horizon, "x");
       horizon_line_sourceY      = json_object_get_number(obj_horizon, "y");
@@ -299,7 +305,7 @@ int appmodule_setup(JSON_Object *obj_config_root) {
     }
 
     if (json_object_has_value_of_type(obj_spriteset, "runner_idle", JSONObject)) {
-      printf("Loading runner idle sprite\n");
+      log_trace("Loading runner idle sprite");
       JSON_Object *obj_runner_idle = json_object_get_object(obj_spriteset, "runner_idle");
       runner_idle_sourceX = json_object_get_number(obj_runner_idle, "x");
       runner_idle_sourceY = json_object_get_number(obj_runner_idle, "y");
@@ -308,8 +314,18 @@ int appmodule_setup(JSON_Object *obj_config_root) {
       runner_idle_count   = json_object_get_number(obj_runner_idle, "c");
     }
 
+    if (json_object_has_value_of_type(obj_spriteset, "runner_jump", JSONObject)) {
+      log_trace("Loading runner jump sprite");
+      JSON_Object *obj_runner_jump = json_object_get_object(obj_spriteset, "runner_jump");
+      runner_jump_sourceX = json_object_get_number(obj_runner_jump, "x");
+      runner_jump_sourceY = json_object_get_number(obj_runner_jump, "y");
+      runner_jump_width   = json_object_get_number(obj_runner_jump, "w");
+      runner_jump_height  = json_object_get_number(obj_runner_jump, "h");
+      runner_jump_count   = json_object_get_number(obj_runner_jump, "c");
+    }
+
     if (json_object_has_value_of_type(obj_spriteset, "runner_walk", JSONObject)) {
-      printf("Loading runner walk sprite\n");
+      log_trace("Loading runner walk sprite");
       JSON_Object *obj_runner_walk = json_object_get_object(obj_spriteset, "runner_walk");
       runner_walk_sourceX = json_object_get_number(obj_runner_walk, "x");
       runner_walk_sourceY = json_object_get_number(obj_runner_walk, "y");
@@ -319,7 +335,7 @@ int appmodule_setup(JSON_Object *obj_config_root) {
     }
 
     if (json_object_has_value_of_type(obj_spriteset, "runner_duck", JSONObject)) {
-      printf("Loading runner_duck sprite\n");
+      log_trace("Loading runner_duck sprite");
       JSON_Object *obj_runner_duck = json_object_get_object(obj_spriteset, "runner_duck");
       runner_duck_sourceX = json_object_get_number(obj_runner_duck, "x");
       runner_duck_sourceY = json_object_get_number(obj_runner_duck, "y");
@@ -403,8 +419,9 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   runner = calloc(1, sizeof(struct game_obj_drawn));
 
   // Why does this base.pos.y work to put trex's feet halfway the ground??
+  runner_groundY = horizon_line_yPos + (horizon_line_height/display_scaling) - (runner_idle_height/display_scaling);
   runner->base.pos.x = 0;
-  runner->base.pos.y = horizon_line_yPos + (horizon_line_height/display_scaling) - (runner_idle_height/display_scaling);
+  runner->base.pos.y = runner_groundY;
   runner->el         = lv_image_create(lv_screen_active());
 
   lv_obj_t *img = runner->el;

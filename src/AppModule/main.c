@@ -94,12 +94,43 @@ void appmodule_loop(uint32_t elapsedTime) {
 
   } else if (game_state == GAME_STATE_RUNNING) {
 
+    // Jump
+    if (KEYS[APP_KEYCODE_SPACE] && (runner->base.pos.y == runner_groundY)) {
+      runner->base.speed.y = -5500;
+    }
+
+    // Gravity
+    if (KEYS[APP_KEYCODE_SPACE]) {
+      runner->base.speed.y += 20 * elapsedTime;
+    } else if (KEYS[APP_KEYCODE_DOWN]) {
+      runner->base.speed.y += 50 * elapsedTime;
+    } else {
+      runner->base.speed.y += 36 * elapsedTime;
+    }
+
+    // Move runner Y according to velocity
+    runner->base.speed.y_tick += elapsedTime * runner->base.speed.y;
+    runner->base.pos.y        += runner->base.speed.y_tick / time_window;
+    runner->base.speed.y_tick  = runner->base.speed.y_tick % time_window;
+
+    // Hit the ground
+    if (runner->base.pos.y >= runner_groundY && runner->base.speed.y > 0) {
+      runner->base.speed.y_tick = 0;
+      runner->base.speed.y      = 0;
+      runner->base.pos.y        = runner_groundY;
+    }
+
+    // Move runner image
+    lv_obj_set_x(runner->el, (runner->base.pos.x * display_scaling) + (runner->base.speed.x_tick * display_scaling / time_window));
+    lv_obj_set_y(runner->el, (runner->base.pos.y * display_scaling) + (runner->base.speed.y_tick * display_scaling / time_window));
+
     // Animate runner
     anim_runner_substep += runner_speed_current * time_window / 1000 * elapsedTime;
     anim_runner_step    += anim_runner_substep / time_window;
     anim_runner_substep  = anim_runner_substep % time_window;
     anim_runner_step     = anim_runner_step % runner_walk_count;
     lv_image_set_offset_x(runner->el, -runner_walk_sourceX - (runner_walk_width*anim_runner_step));
+    lv_image_set_offset_y(runner->el, -runner_walk_sourceY);
 
     // Update ground
     for(i=0; i < horizon_line_count ; i++) {
