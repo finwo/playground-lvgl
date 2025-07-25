@@ -85,65 +85,73 @@ void appmodule_loop(uint32_t elapsedTime) {
       lv_obj_set_x(runner->el, (runner->base.pos.x * display_scaling));
 
       // Runner is in position, let's start
-      game_state = GAME_STATE_RUNNING;
+      game_state           = GAME_STATE_RUNNING;
+      runner_speed_current = runner_speed_start;
+
+      printf("Runner speed: %f\n", runner_speed_current);
     }
+
+
+  } else if (game_state == GAME_STATE_RUNNING) {
+
+    // Update ground
+    for(i=0; i < horizon_line_count ; i++) {
+      struct game_obj_drawn *_horizon_line = horizon_lines[i];
+
+      // Glide left (because speed.x<0)
+      _horizon_line->base.speed.x_tick -= elapsedTime * runner_speed_current * 1000;
+      _horizon_line->base.pos.x        += _horizon_line->base.speed.x_tick / time_window;
+      _horizon_line->base.speed.x_tick  = _horizon_line->base.speed.x_tick % time_window;
+
+      // Out of bounds left = "respawn" with new random from ground sets
+      if (_horizon_line->base.pos.x < (0 - horizon_line_width / display_scaling)) {
+        _horizon_line->base.pos.x += (horizon_line_width/display_scaling) * horizon_line_count;
+        lv_image_set_offset_x(_horizon_line->el, 0 - horizon_line_sourceX - (rand_between(0,horizon_line_sprite_count-1)*horizon_line_width));
+      }
+
+      // Move the image itself
+      lv_obj_set_x(_horizon_line->el, (_horizon_line->base.pos.x * display_scaling) + (_horizon_line->base.speed.x_tick * display_scaling / time_window));
+      lv_obj_set_y(_horizon_line->el, (_horizon_line->base.pos.y * display_scaling) + (_horizon_line->base.speed.y_tick * display_scaling / time_window));
+    }
+
+
+
+    // Update clouds
+    for(i=0 ; i < cloud_count ; i++) {
+      struct game_obj_drawn *_cloud = clouds[i];
+
+      // Glide left (because speed.x<0)
+      _cloud->base.speed.x_tick += elapsedTime * _cloud->base.speed.x;
+      _cloud->base.pos.x        += _cloud->base.speed.x_tick / time_window;
+      _cloud->base.speed.x_tick  = _cloud->base.speed.x_tick % time_window;
+
+      // Out of bounds left = "respawn"
+      if ((_cloud->base.speed.x < 0) && (_cloud->base.pos.x < (0 - cloud_width / display_scaling))) {
+        _cloud->base.pos.x   = display_width;
+        _cloud->base.pos.y   = rand_between(cloud_minY, cloud_maxY);
+      }
+
+      // Out of bounds right = "respawn"
+      if ((_cloud->base.speed.x > 0) && (_cloud->base.pos.x > display_width)) {
+        _cloud->base.pos.x   = 0 - (cloud_width / display_scaling);
+        _cloud->base.pos.y   = rand_between(cloud_minY, cloud_maxY);
+      }
+
+      // Move the image itself
+      lv_obj_set_x(_cloud->el, (_cloud->base.pos.x * display_scaling) + (_cloud->base.speed.x_tick * display_scaling / time_window));
+      lv_obj_set_y(_cloud->el, (_cloud->base.pos.y * display_scaling) + (_cloud->base.speed.y_tick * display_scaling / time_window));
+    }
+
+
+
+
+
 
   }
 
 
 
 
-
-  // // Update clouds
-  // for(i=0 ; i < cloud_count ; i++) {
-  //   struct game_obj_drawn *_cloud = clouds[i];
-
-  //   // Glide left (because speed.x<0)
-  //   _cloud->base.speed.x_tick += elapsedTime * _cloud->base.speed.x;
-  //   _cloud->base.pos.x        += _cloud->base.speed.x_tick / time_window;
-  //   _cloud->base.speed.x_tick  = _cloud->base.speed.x_tick % time_window;
-
-  //   // Out of bounds left = "respawn"
-  //   if ((_cloud->base.speed.x < 0) && (_cloud->base.pos.x < (0 - cloud_width / display_scaling))) {
-  //     _cloud->base.pos.x   = display_width;
-  //     _cloud->base.pos.y   = rand_between(cloud_minY, cloud_maxY);
-  //   }
-
-  //   // Out of bounds right = "respawn"
-  //   if ((_cloud->base.speed.x > 0) && (_cloud->base.pos.x > display_width)) {
-  //     _cloud->base.pos.x   = 0 - (cloud_width / display_scaling);
-  //     _cloud->base.pos.y   = rand_between(cloud_minY, cloud_maxY);
-  //   }
-
-  //   // Move the image itself
-  //   lv_obj_set_x(_cloud->el, (_cloud->base.pos.x * display_scaling) + (_cloud->base.speed.x_tick * display_scaling / time_window));
-  //   lv_obj_set_y(_cloud->el, (_cloud->base.pos.y * display_scaling) + (_cloud->base.speed.y_tick * display_scaling / time_window));
-
-  //   // if (!i) {
-  //   //   printf("0: %d,%d -- %d\n", _cloud->base.pos.x, _cloud->base.pos.y, _cloud->base.speed.x_tick);
-  //   // }
-
-  // }
-
-  // // Update ground
-  // for(i=0; i < horizon_line_count ; i++) {
-  //   struct game_obj_drawn *_horizon_line = horizon_lines[i];
-
-  //   // Glide left (because speed.x<0)
-  //   _horizon_line->base.speed.x_tick += elapsedTime * _horizon_line->base.speed.x;
-  //   _horizon_line->base.pos.x        += _horizon_line->base.speed.x_tick / time_window;
-  //   _horizon_line->base.speed.x_tick  = _horizon_line->base.speed.x_tick % time_window;
-
-  //   // Out of bounds left = "respawn" with new random from ground sets
-  //   if ((_horizon_line->base.speed.x < 0) && (_horizon_line->base.pos.x < (0 - horizon_line_width / display_scaling))) {
-  //     _horizon_line->base.pos.x += (horizon_line_width/display_scaling) * horizon_line_count;
-  //     lv_image_set_offset_x(_horizon_line->el, 0 - horizon_line_sourceX - (rand_between(0,3)*horizon_line_width));
-  //   }
-
-  //   // Move the image itself
-  //   lv_obj_set_x(_horizon_line->el, (_horizon_line->base.pos.x * display_scaling) + (_horizon_line->base.speed.x_tick * display_scaling / time_window));
-  //   lv_obj_set_y(_horizon_line->el, (_horizon_line->base.pos.y * display_scaling) + (_horizon_line->base.speed.y_tick * display_scaling / time_window));
-  // }
 
 
   // // Add a cloud when not enough are present

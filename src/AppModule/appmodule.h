@@ -103,6 +103,7 @@ extern int cloud_speed;
 
 
 extern struct game_obj_drawn **horizon_lines;
+extern int horizon_line_sprite_count;
 extern int horizon_line_count;
 extern int horizon_line_desired;
 extern int horizon_line_yPos;
@@ -114,6 +115,7 @@ extern int horizon_line_speed;
 
 extern double runner_speed_current;
 extern double runner_speed_start;
+extern double runner_speed_max;
 
 extern struct game_obj_drawn *runner;
 

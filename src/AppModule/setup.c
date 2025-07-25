@@ -55,6 +55,7 @@ int game_state;
 
 double runner_speed_current;
 double runner_speed_start;
+double runner_speed_max;
 
 struct game_obj_drawn **clouds;
 const lv_draw_buf_t *buf_spritesheet;
@@ -73,6 +74,7 @@ int cloud_height  = 0;
 int cloud_speed   = 0;
 
 struct game_obj_drawn **horizon_lines;
+int horizon_line_sprite_count;
 int horizon_line_count;
 int horizon_line_desired;
 int horizon_line_sourceX;
@@ -186,6 +188,17 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   time_window = (int)json_object_get_number(obj__config, "timeWindow");
   time_window = time_window ? time_window : 10000;
 
+  if (!json_object_has_value_of_type(obj__config, "speedStart", JSONNumber)) {
+    log_fatal("'speedStart' configuration missing");
+    exit(1);
+  }
+  if (!json_object_has_value_of_type(obj__config, "speedMax", JSONNumber)) {
+    log_fatal("'speedMax' configuration missing");
+    exit(1);
+  }
+  runner_speed_start = json_object_get_number(obj__config, "speedStart");
+  runner_speed_max   = json_object_get_number(obj__config, "speedMax");
+
   // Check for font config existing
   if (!json_object_has_value_of_type(obj__config, "fontFile", JSONString)) {
     log_fatal("'fontFile' configuration missing");
@@ -228,9 +241,6 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   lv_style_init(&hiscoreStyle);
   lv_style_set_text_color(&hiscoreStyle, lv_color_hex(0x999999));
   lv_obj_add_style(label_hiscore, &hiscoreStyle, 0);
-
-  // Load runner information
-  runner_speed_start = json_object_get_number(obj__config, "startSpeed");
 
   // Get the spritesheet config
   char *target_spritesheet = NULL;
@@ -281,10 +291,11 @@ int appmodule_setup(JSON_Object *obj_config_root) {
     if (json_object_has_value_of_type(obj_spriteset, "horizon", JSONObject)) {
       printf("Loading horizon sprite\n");
       JSON_Object *obj_horizon = json_object_get_object(obj_spriteset, "horizon");
-      horizon_line_sourceX = json_object_get_number(obj_horizon, "x");
-      horizon_line_sourceY = json_object_get_number(obj_horizon, "y");
-      horizon_line_width   = json_object_get_number(obj_horizon, "w");
-      horizon_line_height  = json_object_get_number(obj_horizon, "h");
+      horizon_line_sourceX      = json_object_get_number(obj_horizon, "x");
+      horizon_line_sourceY      = json_object_get_number(obj_horizon, "y");
+      horizon_line_width        = json_object_get_number(obj_horizon, "w");
+      horizon_line_height       = json_object_get_number(obj_horizon, "h");
+      horizon_line_sprite_count = json_object_get_number(obj_horizon, "c");
     }
 
     if (json_object_has_value_of_type(obj_spriteset, "runner_idle", JSONObject)) {
