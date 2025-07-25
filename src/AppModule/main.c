@@ -132,6 +132,17 @@ void appmodule_loop(uint32_t elapsedTime) {
     lv_image_set_offset_x(runner->el, -runner_walk_sourceX - (runner_walk_width*anim_runner_step));
     lv_image_set_offset_y(runner->el, -runner_walk_sourceY);
 
+    // Jumping = different sprite, offset sprite if needed
+    if (runner->base.pos.y != runner_groundY) {
+      lv_image_set_offset_x(runner->el, -runner_jump_sourceX);
+      lv_image_set_offset_y(runner->el, -runner_jump_sourceY);
+      lv_obj_set_pos(
+        runner->el,
+        (runner->base.pos.x * display_scaling) + (runner->base.speed.x_tick * display_scaling / time_window) + ((runner_walk_width - runner_jump_width)/2),
+        (runner->base.pos.y * display_scaling) + (runner->base.speed.y_tick * display_scaling / time_window) + ((runner_walk_height - runner_jump_height)/2)
+      );
+    }
+
     // Update ground
     for(i=0; i < horizon_line_count ; i++) {
       struct game_obj_drawn *_horizon_line = horizon_lines[i];
