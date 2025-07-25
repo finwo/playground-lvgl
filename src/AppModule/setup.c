@@ -71,7 +71,7 @@ int cloud_sourceX = 0;
 int cloud_sourceY = 0;
 int cloud_width   = 0;
 int cloud_height  = 0;
-int cloud_speed   = 0;
+double cloud_speed   = 0;
 
 struct game_obj_drawn **horizon_lines;
 int horizon_line_sprite_count;
@@ -337,10 +337,10 @@ int appmodule_setup(JSON_Object *obj_config_root) {
       JSON_Object *obj_backgroundCloud = json_object_get_object(obj_backgroundElements, "cloud");
 
       cloud_count   = 0;
-      cloud_desired = (int)json_object_get_number(obj_backgroundCloud, "maxEls");
-      cloud_minY    = (int)json_object_get_number(obj_backgroundCloud, "minY");
-      cloud_maxY    = (int)json_object_get_number(obj_backgroundCloud, "maxY");
-      cloud_speed   = (int)json_object_get_number(obj_backgroundCloud, "speed");
+      cloud_desired = json_object_get_number(obj_backgroundCloud, "maxEls");
+      cloud_minY    = json_object_get_number(obj_backgroundCloud, "minY");
+      cloud_maxY    = json_object_get_number(obj_backgroundCloud, "maxY");
+      cloud_speed   = json_object_get_number(obj_backgroundCloud, "speed");
     }
   }
 

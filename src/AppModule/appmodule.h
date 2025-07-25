@@ -99,8 +99,7 @@ extern int cloud_sourceX;
 extern int cloud_sourceY;
 extern int cloud_width;
 extern int cloud_height;
-extern int cloud_speed;
-
+extern double cloud_speed;
 
 extern struct game_obj_drawn **horizon_lines;
 extern int horizon_line_sprite_count;

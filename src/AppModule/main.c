@@ -98,8 +98,8 @@ void appmodule_loop(uint32_t elapsedTime) {
     for(i=0; i < horizon_line_count ; i++) {
       struct game_obj_drawn *_horizon_line = horizon_lines[i];
 
-      // Glide left (because speed.x<0)
-      _horizon_line->base.speed.x_tick -= elapsedTime * runner_speed_current * 1000;
+      // Glide left (because <0)
+      _horizon_line->base.speed.x_tick -= elapsedTime * runner_speed_current * time_window / 30;
       _horizon_line->base.pos.x        += _horizon_line->base.speed.x_tick / time_window;
       _horizon_line->base.speed.x_tick  = _horizon_line->base.speed.x_tick % time_window;
 
@@ -121,19 +121,13 @@ void appmodule_loop(uint32_t elapsedTime) {
       struct game_obj_drawn *_cloud = clouds[i];
 
       // Glide left (because speed.x<0)
-      _cloud->base.speed.x_tick += elapsedTime * _cloud->base.speed.x;
+      _cloud->base.speed.x_tick -= elapsedTime * runner_speed_current * time_window / 30 * cloud_speed;
       _cloud->base.pos.x        += _cloud->base.speed.x_tick / time_window;
       _cloud->base.speed.x_tick  = _cloud->base.speed.x_tick % time_window;
 
       // Out of bounds left = "respawn"
-      if ((_cloud->base.speed.x < 0) && (_cloud->base.pos.x < (0 - cloud_width / display_scaling))) {
-        _cloud->base.pos.x   = display_width;
-        _cloud->base.pos.y   = rand_between(cloud_minY, cloud_maxY);
-      }
-
-      // Out of bounds right = "respawn"
-      if ((_cloud->base.speed.x > 0) && (_cloud->base.pos.x > display_width)) {
-        _cloud->base.pos.x   = 0 - (cloud_width / display_scaling);
+      if (_cloud->base.pos.x < (0 - cloud_width / display_scaling)) {
+        _cloud->base.pos.x   = rand_between(display_width, display_width * 2);
         _cloud->base.pos.y   = rand_between(cloud_minY, cloud_maxY);
       }
 
@@ -141,11 +135,6 @@ void appmodule_loop(uint32_t elapsedTime) {
       lv_obj_set_x(_cloud->el, (_cloud->base.pos.x * display_scaling) + (_cloud->base.speed.x_tick * display_scaling / time_window));
       lv_obj_set_y(_cloud->el, (_cloud->base.pos.y * display_scaling) + (_cloud->base.speed.y_tick * display_scaling / time_window));
     }
-
-
-
-
-
 
   }
 

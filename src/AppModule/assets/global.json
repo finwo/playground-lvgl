@@ -112,7 +112,7 @@
     "cloud": {
       "minY"  : 30,
       "maxY"  : 71,
-      "maxEls": 1,
+      "maxEls": 2,
       "speed" : 0.2,
 
       "maxGap": 400,
