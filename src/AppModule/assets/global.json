@@ -5,7 +5,8 @@
       "spriteset": {
         "backgroundEl": { "x":   86, "y":  2 },
         "obstacle1"   : { "x":  228, "y":  2, "w":  17, "h": 35, "c": 6 },
-        "obstacle2"   : { "x":  332, "y":  2 },
+        "obstacle2"   : { "x":  332, "y":  2, "w":  25, "h": 50, "c": 4 },
+        "obstacle3"   : { "x":  432, "y":  2, "w":  50, "h": 50, "c": 1 },
         "cloud"       : { "x":   86, "y":  2, "w":  46, "h": 14 },
         "horizon"     : { "x":    2, "y": 54, "w": 300, "h": 12, "c": 4 },
         "moon"        : { "x":  484, "y":  2 },
@@ -24,7 +25,8 @@
       "spriteset": {
         "backgroundEl": { "x":  166, "y":   2 },
         "obstacle1"   : { "x":  446, "y":   2, "w":  34, "h":  70, "c": 6 },
-        "obstacle2"   : { "x":  652, "y":   2 },
+        "obstacle2"   : { "x":  652, "y":   2, "w":  50, "h": 100, "c": 4 },
+        "obstacle3"   : { "x":  852, "y":   2, "w": 100, "h": 100, "c": 1 },
         "cloud"       : { "x":  166, "y":   2, "w":  92, "h":  28 },
         "horizon"     : { "x":    2, "y": 104, "w": 600, "h":  24, "c": 4 },
         "moon"        : { "x":  954, "y":   2 },
@@ -61,34 +63,46 @@
 
   "obstacles": [
     {
+      "enabled"       : true,
       "type"          : "obstacle1",
+      "yPos"          : 105,
+      "minSpeed"      : 0,
+      "minGap"        : 120,
+      "numFrames"     : 1,
+
       "width"         : 17,
       "height"        : 35,
-      "yPos"          : 105,
-      "multipleSpeed" : 4,
-      "minGap"        : 120,
-      "minSpeed"      : 0,
-      "collisionBoxes": [
-        {"x":  0, "y": 7, "width": 5, "height": 27},
-        {"x":  4, "y": 0, "width": 6, "height": 34},
-        {"x": 10, "y": 4, "width": 7, "height": 14}
-      ]
+      "multipleSpeed" : 4
     },
+
     {
+      "enabled"       : true,
       "type"          : "obstacle2",
+      "yPos"          : 90,
+      "minSpeed"      : 0,
+      "minGap"        : 120,
+      "numFrames"     : 1,
+
       "width"         : 25,
       "height"        : 50,
-      "yPos"          : 90,
-      "multipleSpeed" : 7,
-      "minGap"        : 120,
-      "minSpeed"      : 0,
-      "collisionBoxes": [
-        {"x":  0, "y": 12, "width":  7, "height": 38},
-        {"x":  8, "y":  0, "width":  7, "height": 49},
-        {"x": 13, "y": 10, "width": 10, "height": 38}
-      ]
+      "multipleSpeed" : 7
     },
+
     {
+      "enabled"       : true,
+      "type"          : "obstacle3",
+      "yPos"          : 90,
+      "minSpeed"      : 0,
+      "minGap"        : 120,
+      "numFrames"     : 1,
+
+      "width"         : 25,
+      "height"        : 50,
+      "multipleSpeed" : 7
+    },
+
+    {
+      "enabled"       : false,
       "type"          : "pterodactyl",
       "width"         : 46,
       "height"        : 40,

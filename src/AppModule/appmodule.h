@@ -17,10 +17,10 @@ extern const bool *KEYS;
 #define APP_KEYCODE_DOWN   81
 #define APP_KEYCODE_UP     82
 
-extern lv_obj_t *cactus;
-extern bool cactus_drag_dragging;
-extern int cactus_drag_offset_x;
-extern int cactus_drag_offset_y;
+// extern lv_obj_t *cactus;
+// extern bool cactus_drag_dragging;
+// extern int cactus_drag_offset_x;
+// extern int cactus_drag_offset_y;
 
 extern lv_display_t *lvDisplay;
 extern lv_indev_t *lvMouse;
@@ -148,6 +148,26 @@ extern int runner_duck_sourceY;
 extern int runner_duck_width;
 extern int runner_duck_height;
 extern int runner_duck_count;
+
+extern struct game_obj_drawn **obstacles;
+
+struct obstacle_type {
+  const char *type;
+  int yPos;
+  int minSpeed;
+  int minGap;
+  int numFrames;
+  int sprite_sourceX;
+  int sprite_sourceY;
+  int sprite_width;
+  int sprite_height;
+  int sprite_count;
+};
+
+extern struct obstacle_type **obstacle_types;
+extern int obstacle_type_count;
+
+
 
 extern lv_obj_t *label_hiscore;
 extern lv_obj_t *label_score;

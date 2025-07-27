@@ -58,7 +58,8 @@ extern "C" {
 lv_obj_t *screen_main;
 // lv_subject_t subj_horizon_offset;
 
-lv_obj_t *cactus;
+struct obstacle_type **obstacle_types = NULL;
+int obstacle_type_count = 0;
 
 int game_state;
 
@@ -158,36 +159,34 @@ lv_obj_t *label_score;
 //   printf("Event! %d\n", event_code);
 // }
 
-bool cactus_drag_dragging = false;
-int cactus_drag_offset_x = 0;
-int cactus_drag_offset_y = 0;
-static void appmodule_cactus_drag(lv_event_t *e) {
-  lv_event_code_t event_code = lv_event_get_code(e);
-
-  lv_point_t pointCursor;
-  lv_indev_get_point(lvMouse, &pointCursor);
-
-
-  switch(event_code) {
-    case LV_EVENT_PRESSING:
-    case LV_EVENT_CLICKED:
-      if (!cactus_drag_dragging) {
-        cactus_drag_dragging = true;
-        cactus_drag_offset_x = pointCursor.x - lv_obj_get_x(cactus);
-        cactus_drag_offset_y = pointCursor.y - lv_obj_get_y(cactus);
-      }
-      break;
-    case LV_EVENT_RELEASED:
-      cactus_drag_dragging = false;
-      break;
-    default:
-      // Don't change dragging behavior
-      break;
-  }
-}
+// bool cactus_drag_dragging = false;
+// int cactus_drag_offset_x = 0;
+// int cactus_drag_offset_y = 0;
+// static void appmodule_cactus_drag(lv_event_t *e) {
+//   lv_event_code_t event_code = lv_event_get_code(e);
+//   lv_point_t pointCursor;
+//   lv_indev_get_point(lvMouse, &pointCursor);
+//   switch(event_code) {
+//     case LV_EVENT_PRESSING:
+//     case LV_EVENT_CLICKED:
+//       if (!cactus_drag_dragging) {
+//         cactus_drag_dragging = true;
+//         cactus_drag_offset_x = pointCursor.x - lv_obj_get_x(cactus);
+//         cactus_drag_offset_y = pointCursor.y - lv_obj_get_y(cactus);
+//       }
+//       break;
+//     case LV_EVENT_RELEASED:
+//       cactus_drag_dragging = false;
+//       break;
+//     default:
+//       // Don't change dragging behavior
+//       break;
+//   }
+// }
 
 int appmodule_setup(JSON_Object *obj_config_root) {
   const char *loglevel = "trace";
+  int i;
   char *appDir = dirname(get_bin_path());
 
   if (0) {
@@ -320,8 +319,9 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   lv_xml_register_image(NULL, "spritesheet", dsc.decoded);
 
   // Load sprite info
+  JSON_Object *obj_spriteset;
   if (json_object_has_value_of_type(obj_spritesheet, "spriteset", JSONObject)) {
-    JSON_Object *obj_spriteset = json_object_get_object(obj_spritesheet, "spriteset");
+    obj_spriteset = json_object_get_object(obj_spritesheet, "spriteset");
 
     if (json_object_has_value_of_type(obj_spriteset, "cloud", JSONObject)) {
       log_trace("Loading cloud sprite");
@@ -382,6 +382,9 @@ int appmodule_setup(JSON_Object *obj_config_root) {
       runner_duck_count   = json_object_get_number(obj_runner_duck, "c");
     }
 
+  } else {
+    log_fatal("Could not set up game, missing spriteset");
+    return 1;
   }
 
   // Load background elements
@@ -404,6 +407,77 @@ int appmodule_setup(JSON_Object *obj_config_root) {
     if (json_object_has_value_of_type(obj_lines, "yPos", JSONNumber)) {
       horizon_line_yPos = (int)json_object_get_number(obj_lines, "yPos");
     }
+  }
+
+  // Load obstacle information
+  if (json_object_has_value_of_type(obj_config_root, "obstacles", JSONArray)) {
+    JSON_Array *arr_obstacles = json_object_get_array(obj_config_root, "obstacles");
+    int arr_obstacles_length = json_array_get_count(arr_obstacles);
+
+    for(i=0; i<arr_obstacles_length; i++) {
+      JSON_Value *entry = json_array_get_value(arr_obstacles, i);
+      if (json_value_get_type(entry) != JSONObject) continue;
+      JSON_Object *obj_entry = json_value_get_object(entry);
+
+      // Skip if enabled=false, keep if missing or enabled=true
+      if (json_object_has_value_of_type(obj_entry, "enabled", JSONBoolean)) {
+        if (!json_object_get_boolean(obj_entry, "enabled")) continue;
+      }
+
+      // Check required fields are there
+      if (!json_object_has_value_of_type(obj_entry, "type", JSONString)) continue;
+      if (!json_object_has_value_of_type(obj_entry, "yPos", JSONNumber)) continue;
+
+      // Ensure a sprite exists for this obstacle type
+      if (!json_object_has_value_of_type(obj_spriteset, json_object_get_string(obj_entry, "type"), JSONObject)) {
+        log_debug("Could not set up obstacle '%s', no sprite configured", json_object_get_string(obj_entry, "type"));
+        continue;
+      }
+
+      // Ensure sprite config has required fields
+      JSON_Object *obj_sprite = json_object_get_object(obj_spriteset, json_object_get_string(obj_entry, "type"));
+      if (
+        (!json_object_has_value_of_type(obj_sprite, "x", JSONNumber)) ||
+        (!json_object_has_value_of_type(obj_sprite, "y", JSONNumber)) ||
+        (!json_object_has_value_of_type(obj_sprite, "w", JSONNumber)) ||
+        (!json_object_has_value_of_type(obj_sprite, "h", JSONNumber)) ||
+        (!json_object_has_value_of_type(obj_sprite, "c", JSONNumber))
+      ) {
+        log_debug("Could not set up obstacle '%s', sprite config not complete", json_object_get_string(obj_entry, "type"));
+        continue;
+      }
+
+      // Build base obstacle with defaults
+      obstacle_types = realloc(obstacle_types, sizeof(void*)*(obstacle_type_count+1));
+      obstacle_types[obstacle_type_count] = calloc(1, sizeof(struct obstacle_type));
+      obstacle_types[obstacle_type_count]->type      = json_object_get_string(obj_entry, "type");
+      obstacle_types[obstacle_type_count]->yPos      = json_object_get_number(obj_entry, "yPos");
+      obstacle_types[obstacle_type_count]->minGap    = 120;
+      obstacle_types[obstacle_type_count]->minSpeed  = 0;
+      obstacle_types[obstacle_type_count]->numFrames = 1;
+      obstacle_types[obstacle_type_count]->sprite_sourceX = json_object_get_number(obj_sprite, "x");
+      obstacle_types[obstacle_type_count]->sprite_sourceY = json_object_get_number(obj_sprite, "y");
+      obstacle_types[obstacle_type_count]->sprite_width   = json_object_get_number(obj_sprite, "w");
+      obstacle_types[obstacle_type_count]->sprite_height  = json_object_get_number(obj_sprite, "h");
+      obstacle_types[obstacle_type_count]->sprite_count   = json_object_get_number(obj_sprite, "c");
+
+      // Load up optional fields
+      if (json_object_has_value_of_type(obj_entry, "minSpeed", JSONNumber)) {
+        obstacle_types[obstacle_type_count]->minSpeed = json_object_get_number(obj_entry, "minSpeed");
+      }
+      if (json_object_has_value_of_type(obj_entry, "minGap", JSONNumber)) {
+        obstacle_types[obstacle_type_count]->minGap = json_object_get_number(obj_entry, "minGap");
+      }
+      if (json_object_has_value_of_type(obj_entry, "numFrames", JSONNumber)) {
+        obstacle_types[obstacle_type_count]->numFrames = json_object_get_number(obj_entry, "numFrames");
+      }
+
+      log_debug("Loaded obstacle '%s' on idx %d", json_object_get_string(obj_entry, "type"), obstacle_type_count);
+
+      obstacle_type_count++;
+    }
+    // if (json_object_has_value_of_type(obj_backgroundElements, "cloud", JSONObject)) {
+      // JSON_Object *obj_backgroundCloud = json_object_get_object(obj_backgroundElements, "cloud");
   }
 
   // Create initial clouds
@@ -475,24 +549,24 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   // lv_obj_set_style_bg_color(img, lv_color_hex(0xFF0000), 0);
   // lv_obj_set_style_bg_opa(img, LV_OPA_TRANSP, 0);
 
-  // Test obstacle to check image blending
-  cactus = lv_image_create(lv_screen_active());
-  lv_image_set_src(cactus, buf_spritesheet);
-  lv_image_set_inner_align(cactus, LV_IMAGE_ALIGN_TOP_LEFT);
-  lv_image_set_offset_x(cactus, -446);
-  lv_image_set_offset_y(cactus, -2);
-  lv_obj_set_size(cactus, 34, 70);
-  lv_obj_set_x(cactus, 10);
-  lv_obj_set_y(cactus, runner->base.pos.y * display_scaling);
+  // // Test obstacle to check image blending
+  // cactus = lv_image_create(lv_screen_active());
+  // lv_image_set_src(cactus, buf_spritesheet);
+  // lv_image_set_inner_align(cactus, LV_IMAGE_ALIGN_TOP_LEFT);
+  // lv_image_set_offset_x(cactus, -446);
+  // lv_image_set_offset_y(cactus, -2);
+  // lv_obj_set_size(cactus, 34, 70);
+  // lv_obj_set_x(cactus, 10);
+  // lv_obj_set_y(cactus, runner->base.pos.y * display_scaling);
 
-  // lv_obj_set_style_blend_mode(cactus, LV_BLEND_MODE_SUBTRACTIVE, 0);
-  // lv_obj_set_style_bg_color(cactus, lv_color_hex(0xFF0000), 0);
-  // lv_obj_set_style_bg_opa(cactus, LV_OPA_50, 0);
+  // // lv_obj_set_style_blend_mode(cactus, LV_BLEND_MODE_SUBTRACTIVE, 0);
+  // // lv_obj_set_style_bg_color(cactus, lv_color_hex(0xFF0000), 0);
+  // // lv_obj_set_style_bg_opa(cactus, LV_OPA_50, 0);
 
-  // Add debug draggable
-  lv_obj_set_flag(cactus, LV_OBJ_FLAG_CLICKABLE, true);
-  lv_obj_add_event_cb(cactus, appmodule_cactus_drag, LV_EVENT_PRESSING, NULL);
-  lv_obj_add_event_cb(cactus, appmodule_cactus_drag, LV_EVENT_RELEASED, NULL);
+  // // Add debug draggable
+  // lv_obj_set_flag(cactus, LV_OBJ_FLAG_CLICKABLE, true);
+  // lv_obj_add_event_cb(cactus, appmodule_cactus_drag, LV_EVENT_PRESSING, NULL);
+  // lv_obj_add_event_cb(cactus, appmodule_cactus_drag, LV_EVENT_RELEASED, NULL);
 
   // Set the game_state so the main loop knows what to do
   game_state = GAME_STATE_WAITING;

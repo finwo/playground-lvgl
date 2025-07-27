@@ -129,11 +129,11 @@ bool game_check_collision(lv_obj_t *a, lv_obj_t *b) {
 void appmodule_loop(uint32_t elapsedTime) {
   int i;
 
-  if (cactus_drag_dragging) {
-    lv_point_t pointCursor;
-    lv_indev_get_point(lvMouse, &pointCursor);
-    lv_obj_set_pos(cactus, pointCursor.x - cactus_drag_offset_x, pointCursor.y - cactus_drag_offset_y);
-  }
+  // if (cactus_drag_dragging) {
+  //   lv_point_t pointCursor;
+  //   lv_indev_get_point(lvMouse, &pointCursor);
+  //   lv_obj_set_pos(cactus, pointCursor.x - cactus_drag_offset_x, pointCursor.y - cactus_drag_offset_y);
+  // }
 
   if (game_state == GAME_STATE_WAITING) {
 
@@ -293,12 +293,13 @@ void appmodule_loop(uint32_t elapsedTime) {
       lv_obj_set_y(_cloud->el, (_cloud->base.pos.y * display_scaling) + (_cloud->base.speed.y_tick * display_scaling / time_window));
     }
 
-    if (game_check_collision(runner->el, cactus)) {
-      lv_obj_set_style_bg_color(runner->el, lv_color_hex(0xFF0000), 0);
-      lv_obj_set_style_bg_opa(runner->el, LV_OPA_COVER, 0);
-    } else {
-      lv_obj_set_style_bg_opa(runner->el, LV_OPA_TRANSP, 0);
-    }
+    // if (game_check_collision(runner->el, cactus)) {
+    //   lv_obj_set_style_bg_color(runner->el, lv_color_hex(0xFF0000), 0);
+    //   lv_obj_set_style_bg_opa(runner->el, LV_OPA_COVER, 0);
+    // } else {
+    //   lv_obj_set_style_bg_opa(runner->el, LV_OPA_TRANSP, 0);
+    // }
+
   }
 
 
