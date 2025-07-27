@@ -3,7 +3,10 @@
 #include "lvgl/src/core/lv_obj_pos.h"
 #include "lvgl/src/core/lv_obj_tree.h"
 #include "lvgl/src/display/lv_display.h"
+#include "lvgl/src/indev/lv_indev.h"
 #include "lvgl/src/misc/lv_area.h"
+#include "lvgl/src/misc/lv_color.h"
+#include "lvgl/src/misc/lv_types.h"
 #include "lvgl/src/others/observer/lv_observer.h"
 #include "lvgl/src/widgets/image/lv_image.h"
 #include <math.h>
@@ -33,6 +36,14 @@ const int32_t anim_start_move_steps    =   3;
 int32_t anim_runner_substep = 0;
 int32_t anim_runner_step    = 0;
 
+#ifndef MAX
+#define MAX(a,b) ((a>b)?(a):(b))
+#endif
+
+#ifndef MIN
+#define MIN(a,b) ((a<b)?(a):(b))
+#endif
+
 // int _get_asset_idx_by_name(const char *name) {
 //   for(int i = 0; appmodule_assets[i].name; i++) {
 //     if (strcmp(name, appmodule_assets[i].name)) continue;
@@ -41,8 +52,88 @@ int32_t anim_runner_step    = 0;
 //   return -1;
 // }
 
+// Checks for alpha collisions between lv_image objects
+// Works fully within draw coordinates
+// return true = collision
+bool game_check_collision(lv_obj_t *a, lv_obj_t *b) {
+  int32_t a_x1 = lv_obj_get_x(a);
+  int32_t a_x2 = lv_obj_get_x2(a) - 1;
+  int32_t a_y1 = lv_obj_get_y(a);
+  int32_t a_y2 = lv_obj_get_y2(a) - 1;
+
+
+  int32_t b_x1 = lv_obj_get_x(b);
+  int32_t b_x2 = lv_obj_get_x2(b) - 1;
+  int32_t b_y1 = lv_obj_get_y(b);
+  int32_t b_y2 = lv_obj_get_y2(b) - 1;
+
+  if (
+    (b_x2 >= a_x1) &&
+    (b_x1 <= a_x2) &&
+    (b_y2 >= a_y1) &&
+    (b_y1 <= a_y2)
+  ) {
+    // Here = bounding boxes overlap
+
+    // Fetch coordinates we need to check for collisions
+    int32_t check_x1 = MAX(b_x1, a_x1);
+    int32_t check_x2 = MIN(b_x2, a_x2);
+    int32_t check_y1 = MAX(b_y1, a_y1);
+    int32_t check_y2 = MIN(b_y2, a_y2);
+
+    // Fetch the objects' spritesheets
+    // We're using the alpha channel as collision masks
+    lv_image_dsc_t *dsc_a = lv_image_get_src(a);
+    lv_image_dsc_t *dsc_b = lv_image_get_src(b);
+
+    // Fetch the offsets within the objects' spritesheets
+    int32_t a_sourceX = -lv_image_get_offset_x(a);
+    int32_t a_sourceY = -lv_image_get_offset_y(a);
+    int32_t b_sourceX = -lv_image_get_offset_x(b);
+    int32_t b_sourceY = -lv_image_get_offset_y(b);
+
+    // And calculate the display to spritesheet offset only once
+    int32_t a_offsetX = a_sourceX - a_x1;
+    int32_t a_offsetY = a_sourceY - a_y1;
+    int32_t b_offsetX = b_sourceX - b_x1;
+    int32_t b_offsetY = b_sourceY - b_y1;
+
+    // TODO: can we do this with gpu blending instead?
+    for(int32_t y = check_y1; y <= check_y2; y++) {
+      for(int32_t x = check_x1; x <= check_x2; x++) {
+        int32_t a_checkX = x + a_offsetX;
+        int32_t a_checkY = y + a_offsetY;
+        int32_t b_checkX = x + b_offsetX;
+        int32_t b_checkY = y + b_offsetY;
+
+        int32_t a_check_idx = (((a_checkY * dsc_a->header.w) + a_checkX) * 4) + 3;
+        int32_t b_check_idx = (((b_checkY * dsc_b->header.w) + b_checkX) * 4) + 3;
+
+        // If both sprites have opacity at check location, we collide
+        if (
+          (dsc_a->data[a_check_idx] >= 128) &&
+          (dsc_b->data[b_check_idx] >= 128)
+        ) {
+          // Overlapping alpha found
+          return true;
+        }
+
+      }
+    }
+  }
+
+  // Fallthrough = no collision found
+  return false;
+}
+
 void appmodule_loop(uint32_t elapsedTime) {
   int i;
+
+  if (cactus_drag_dragging) {
+    lv_point_t pointCursor;
+    lv_indev_get_point(lvMouse, &pointCursor);
+    lv_obj_set_pos(cactus, pointCursor.x - cactus_drag_offset_x, pointCursor.y - cactus_drag_offset_y);
+  }
 
   if (game_state == GAME_STATE_WAITING) {
 
@@ -202,6 +293,12 @@ void appmodule_loop(uint32_t elapsedTime) {
       lv_obj_set_y(_cloud->el, (_cloud->base.pos.y * display_scaling) + (_cloud->base.speed.y_tick * display_scaling / time_window));
     }
 
+    if (game_check_collision(runner->el, cactus)) {
+      lv_obj_set_style_bg_color(runner->el, lv_color_hex(0xFF0000), 0);
+      lv_obj_set_style_bg_opa(runner->el, LV_OPA_COVER, 0);
+    } else {
+      lv_obj_set_style_bg_opa(runner->el, LV_OPA_TRANSP, 0);
+    }
   }
 
 

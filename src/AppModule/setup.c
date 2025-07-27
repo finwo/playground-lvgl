@@ -1,8 +1,15 @@
 #include "appmodule.h"
+#include "lvgl/src/core/lv_obj.h"
+#include "lvgl/src/core/lv_obj_event.h"
 #include "lvgl/src/core/lv_obj_scroll.h"
+#include "lvgl/src/core/lv_obj_style_gen.h"
 #include "lvgl/src/display/lv_display.h"
+#include "lvgl/src/indev/lv_indev.h"
 #include "lvgl/src/libs/tiny_ttf/lv_tiny_ttf.h"
 #include "lvgl/src/misc/lv_area.h"
+#include "lvgl/src/misc/lv_color.h"
+#include "lvgl/src/misc/lv_event.h"
+#include "lvgl/src/misc/lv_style.h"
 #include "lvgl/src/misc/lv_style_gen.h"
 #include "lvgl/src/misc/lv_text.h"
 #ifdef __cplusplus
@@ -50,6 +57,8 @@ extern "C" {
 
 lv_obj_t *screen_main;
 // lv_subject_t subj_horizon_offset;
+
+lv_obj_t *cactus;
 
 int game_state;
 
@@ -148,6 +157,34 @@ lv_obj_t *label_score;
 //   lv_event_code_t event_code = lv_event_get_code(e);
 //   printf("Event! %d\n", event_code);
 // }
+
+bool cactus_drag_dragging = false;
+int cactus_drag_offset_x = 0;
+int cactus_drag_offset_y = 0;
+static void appmodule_cactus_drag(lv_event_t *e) {
+  lv_event_code_t event_code = lv_event_get_code(e);
+
+  lv_point_t pointCursor;
+  lv_indev_get_point(lvMouse, &pointCursor);
+
+
+  switch(event_code) {
+    case LV_EVENT_PRESSING:
+    case LV_EVENT_CLICKED:
+      if (!cactus_drag_dragging) {
+        cactus_drag_dragging = true;
+        cactus_drag_offset_x = pointCursor.x - lv_obj_get_x(cactus);
+        cactus_drag_offset_y = pointCursor.y - lv_obj_get_y(cactus);
+      }
+      break;
+    case LV_EVENT_RELEASED:
+      cactus_drag_dragging = false;
+      break;
+    default:
+      // Don't change dragging behavior
+      break;
+  }
+}
 
 int appmodule_setup(JSON_Object *obj_config_root) {
   const char *loglevel = "trace";
@@ -433,6 +470,29 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   lv_obj_set_x(img, runner->base.pos.x * display_scaling);
   lv_obj_set_y(img, runner->base.pos.y * display_scaling);
   lv_obj_set_size(img, runner_idle_width, runner_idle_height);
+
+  // // Gray background on the runner
+  // lv_obj_set_style_bg_color(img, lv_color_hex(0xFF0000), 0);
+  // lv_obj_set_style_bg_opa(img, LV_OPA_TRANSP, 0);
+
+  // Test obstacle to check image blending
+  cactus = lv_image_create(lv_screen_active());
+  lv_image_set_src(cactus, buf_spritesheet);
+  lv_image_set_inner_align(cactus, LV_IMAGE_ALIGN_TOP_LEFT);
+  lv_image_set_offset_x(cactus, -446);
+  lv_image_set_offset_y(cactus, -2);
+  lv_obj_set_size(cactus, 34, 70);
+  lv_obj_set_x(cactus, 10);
+  lv_obj_set_y(cactus, runner->base.pos.y * display_scaling);
+
+  // lv_obj_set_style_blend_mode(cactus, LV_BLEND_MODE_SUBTRACTIVE, 0);
+  // lv_obj_set_style_bg_color(cactus, lv_color_hex(0xFF0000), 0);
+  // lv_obj_set_style_bg_opa(cactus, LV_OPA_50, 0);
+
+  // Add debug draggable
+  lv_obj_set_flag(cactus, LV_OBJ_FLAG_CLICKABLE, true);
+  lv_obj_add_event_cb(cactus, appmodule_cactus_drag, LV_EVENT_PRESSING, NULL);
+  lv_obj_add_event_cb(cactus, appmodule_cactus_drag, LV_EVENT_RELEASED, NULL);
 
   // Set the game_state so the main loop knows what to do
   game_state = GAME_STATE_WAITING;

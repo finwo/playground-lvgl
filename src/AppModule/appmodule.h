@@ -17,6 +17,11 @@ extern const bool *KEYS;
 #define APP_KEYCODE_DOWN   81
 #define APP_KEYCODE_UP     82
 
+extern lv_obj_t *cactus;
+extern bool cactus_drag_dragging;
+extern int cactus_drag_offset_x;
+extern int cactus_drag_offset_y;
+
 extern lv_display_t *lvDisplay;
 extern lv_indev_t *lvMouse;
 extern lv_indev_t *lvMouseWheel;
