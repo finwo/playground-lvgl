@@ -126,8 +126,18 @@ int runner_duck_width;
 int runner_duck_height;
 int runner_duck_count;
 
+int runner_dead_sourceX;
+int runner_dead_sourceY;
+int runner_dead_width;
+int runner_dead_height;
+int runner_dead_count;
+
 lv_obj_t *label_hiscore;
 lv_obj_t *label_score;
+int score_current = 0;
+int score_record  = 0;
+char *aScore = 0;
+char *aHiScore = 0;
 
 // struct game_obj_drawn *horizon_lines;
 // int horizon_lines_count;
@@ -277,14 +287,16 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   lv_obj_add_style(lv_screen_active(), fontStyle, 0);
 
   // Build the scoring labels
+  asprintf(&aScore  , "%05d", score_current);
+  asprintf(&aHiScore, "HI %05d", score_record);
   label_hiscore = lv_label_create(lv_screen_active());
   label_score = lv_label_create(lv_screen_active());
   lv_obj_set_align(label_hiscore, LV_ALIGN_TOP_RIGHT);
   lv_obj_set_align(label_score, LV_ALIGN_TOP_RIGHT);
   lv_obj_set_pos(label_hiscore, 0, font_size);
   lv_obj_set_pos(label_score, 0, 0);
-  lv_label_set_text(label_score, "00000");
-  lv_label_set_text(label_hiscore, "HI 00000");
+  lv_label_set_text(label_score, aScore);
+  lv_label_set_text(label_hiscore, aHiScore);
 
   static lv_style_t hiscoreStyle;
   lv_style_init(&hiscoreStyle);
@@ -385,6 +397,16 @@ int appmodule_setup(JSON_Object *obj_config_root) {
       runner_duck_width   = json_object_get_number(obj_runner_duck, "w");
       runner_duck_height  = json_object_get_number(obj_runner_duck, "h");
       runner_duck_count   = json_object_get_number(obj_runner_duck, "c");
+    }
+
+    if (json_object_has_value_of_type(obj_spriteset, "runner_dead", JSONObject)) {
+      log_trace("Loading runner dead sprite");
+      JSON_Object *obj_runner_dead = json_object_get_object(obj_spriteset, "runner_dead");
+      runner_dead_sourceX = json_object_get_number(obj_runner_dead, "x");
+      runner_dead_sourceY = json_object_get_number(obj_runner_dead, "y");
+      runner_dead_width   = json_object_get_number(obj_runner_dead, "w");
+      runner_dead_height  = json_object_get_number(obj_runner_dead, "h");
+      runner_dead_count   = json_object_get_number(obj_runner_dead, "c");
     }
 
   } else {

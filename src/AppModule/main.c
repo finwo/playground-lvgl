@@ -39,6 +39,9 @@ const int32_t anim_start_move_steps    =   3;
 int32_t anim_runner_substep = 0;
 int32_t anim_runner_step    = 0;
 
+double speedDiv = 20;
+int32_t score_tick = 0;
+
 #ifndef MAX
 #define MAX(a,b) ((a>b)?(a):(b))
 #endif
@@ -188,6 +191,13 @@ void appmodule_loop(uint32_t elapsedTime) {
 
   } else if (game_state == GAME_STATE_RUNNING) {
 
+    // Track score
+    score_tick    += runner_speed_current * elapsedTime;
+    score_current += score_tick / 750;
+    score_tick     = score_tick % 750;
+    asprintf(&aScore, "%05d", score_current);
+    lv_label_set_text(label_score, aScore);
+
     // Jump
     if (KEYS[APP_KEYCODE_SPACE] && (runner->base.pos.y == runner_groundY)) {
       runner->base.speed.y = -5500;
@@ -257,7 +267,7 @@ void appmodule_loop(uint32_t elapsedTime) {
     }
 
     // Update obstacle spawn position tracking
-    obstacle_spawn_position_tick -= elapsedTime * runner_speed_current * time_window / 30;
+    obstacle_spawn_position_tick -= elapsedTime * runner_speed_current * time_window / speedDiv;
     obstacle_spawn_position      += obstacle_spawn_position_tick / time_window;
     obstacle_spawn_position_tick  = obstacle_spawn_position_tick % time_window;
 
@@ -304,7 +314,7 @@ void appmodule_loop(uint32_t elapsedTime) {
       struct obstacle_type  *type     = (struct obstacle_type *)obstacle->base.udata;
 
       // Glide left (because <0)
-      obstacle->base.speed.x_tick -= elapsedTime * runner_speed_current * time_window / 30 * type->speedOffset;
+      obstacle->base.speed.x_tick -= elapsedTime * runner_speed_current * time_window / speedDiv * type->speedOffset;
       obstacle->base.pos.x        += obstacle->base.speed.x_tick / time_window;
       obstacle->base.speed.x_tick  = obstacle->base.speed.x_tick % time_window;
 
@@ -331,7 +341,7 @@ void appmodule_loop(uint32_t elapsedTime) {
       struct game_obj_drawn *_horizon_line = horizon_lines[i];
 
       // Glide left (because <0)
-      _horizon_line->base.speed.x_tick -= elapsedTime * runner_speed_current * time_window / 30;
+      _horizon_line->base.speed.x_tick -= elapsedTime * runner_speed_current * time_window / speedDiv;
       _horizon_line->base.pos.x        += _horizon_line->base.speed.x_tick / time_window;
       _horizon_line->base.speed.x_tick  = _horizon_line->base.speed.x_tick % time_window;
 
@@ -351,7 +361,7 @@ void appmodule_loop(uint32_t elapsedTime) {
       struct game_obj_drawn *_cloud = clouds[i];
 
       // Glide left (because speed.x<0)
-      _cloud->base.speed.x_tick -= elapsedTime * runner_speed_current * time_window / 30 * cloud_speed;
+      _cloud->base.speed.x_tick -= elapsedTime * runner_speed_current * time_window / speedDiv * cloud_speed;
       _cloud->base.pos.x        += _cloud->base.speed.x_tick / time_window;
       _cloud->base.speed.x_tick  = _cloud->base.speed.x_tick % time_window;
 
@@ -366,12 +376,51 @@ void appmodule_loop(uint32_t elapsedTime) {
       lv_obj_set_y(_cloud->el, (_cloud->base.pos.y * display_scaling) + (_cloud->base.speed.y_tick * display_scaling / time_window));
     }
 
-    // if (game_check_collision(runner->el, cactus)) {
-    //   lv_obj_set_style_bg_color(runner->el, lv_color_hex(0xFF0000), 0);
-    //   lv_obj_set_style_bg_opa(runner->el, LV_OPA_COVER, 0);
-    // } else {
-    //   lv_obj_set_style_bg_opa(runner->el, LV_OPA_TRANSP, 0);
-    // }
+    for(i=0; i<obstacle_count; i++) {
+      if (game_check_collision(runner->el, obstacles[i]->el)) {
+        game_state = GAME_STATE_DEAD;
+
+        // Switch to dead sprite
+        lv_image_set_offset_x(runner->el, -runner_dead_sourceX);
+        lv_image_set_offset_y(runner->el, -runner_dead_sourceY);
+        lv_obj_set_width(runner->el, runner_dead_width);
+        lv_obj_set_height(runner->el, runner_dead_height);
+        lv_obj_set_x(runner->el, (runner->base.pos.x * display_scaling) + (runner->base.speed.x_tick * display_scaling / time_window));
+        lv_obj_set_y(runner->el, (runner->base.pos.y * display_scaling) + (runner->base.speed.y_tick * display_scaling / time_window));
+
+        // Update hiscore
+        score_record = MAX(score_record, score_current);
+        asprintf(&aHiScore, "HI %05d", score_record);
+        lv_label_set_text(label_hiscore, aHiScore);
+      }
+    }
+
+    // lv_obj_set_style_bg_color(runner->el, lv_color_hex(0xFF0000), 0);
+    // lv_obj_set_style_bg_opa(runner->el, LV_OPA_COVER, 0);
+
+  } else if (game_state == GAME_STATE_DEAD) {
+
+    // Space pressed = restart
+    if (KEYS[APP_KEYCODE_SPACE]) {
+      log_trace("Space was pressed, restarting");
+      lv_image_set_offset_x(runner->el, -runner_walk_sourceX);
+      lv_image_set_offset_y(runner->el, -runner_walk_sourceY);
+
+      // Remove all obstacles, start from scratch
+      for(i=0; i<obstacle_count; i++) {
+        lv_obj_delete(obstacles[i]->el);
+        free(obstacles[i]);
+      }
+      obstacle_count = 0;
+
+      // Reset score
+      score_current = 0;
+      score_tick    = 0;
+
+      // And let's continue the game
+      game_state = GAME_STATE_RUNNING;
+    }
+
 
   }
 

@@ -150,6 +150,12 @@ extern int runner_duck_width;
 extern int runner_duck_height;
 extern int runner_duck_count;
 
+extern int runner_dead_sourceX;
+extern int runner_dead_sourceY;
+extern int runner_dead_width;
+extern int runner_dead_height;
+extern int runner_dead_count;
+
 extern struct game_obj_drawn **obstacles;
 extern int obstacle_count;
 
@@ -174,5 +180,9 @@ extern int obstacle_spawn_position_tick;
 
 extern lv_obj_t *label_hiscore;
 extern lv_obj_t *label_score;
+extern int score_current;
+extern int score_record;
+extern char *aScore;
+extern char *aHiScore;
 
 #endif // __APPMODULE_H__
