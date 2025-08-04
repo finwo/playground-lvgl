@@ -163,7 +163,8 @@ struct obstacle_type {
   const char *type;
   double speedOffset;
   int yPos;
-  int minSpeed;
+  double minSpeed;
+  int chance;
   int minGap;
   int numFrames;
   int sprite_sourceX;
@@ -174,10 +175,13 @@ struct obstacle_type {
 };
 
 extern struct obstacle_type **obstacle_types;
+extern struct obstacle_type **obstacle_type_chanced;
 extern int obstacle_type_count;
 extern int obstacle_spawn_position;
 extern int obstacle_spawn_position_tick;
+extern int obstacle_type_chance_total;
 
+extern lv_obj_t *label_debug;
 extern lv_obj_t *label_hiscore;
 extern lv_obj_t *label_score;
 extern int score_current;

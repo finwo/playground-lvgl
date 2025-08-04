@@ -71,6 +71,7 @@
       "minSpeed"      : 0,
       "minGap"        : 120,
       "numFrames"     : 1,
+      "chance"        : 10,
 
       "width"         : 17,
       "height"        : 35,
@@ -82,8 +83,9 @@
       "type"          : "obstacle2",
       "yPos"          : 90,
       "minSpeed"      : 0,
-      "minGap"        : 120,
+      "minGap"        : 140,
       "numFrames"     : 1,
+      "chance"        : 8,
 
       "width"         : 25,
       "height"        : 50,
@@ -94,9 +96,10 @@
       "enabled"       : true,
       "type"          : "obstacle3",
       "yPos"          : 90,
-      "minSpeed"      : 7,
-      "minGap"        : 120,
+      "minSpeed"      : 6.1,
+      "minGap"        : 150,
       "numFrames"     : 1,
+      "chance"        : 2,
 
       "width"         : 25,
       "height"        : 50,

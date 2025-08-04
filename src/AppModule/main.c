@@ -1,6 +1,7 @@
 
 
 #include "appmodule.h"
+#include "lvgl/src/widgets/label/lv_label.h"
 #include <stdlib.h>
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +25,8 @@ extern "C" {
 
 #include "AppModule/appmodule.h"
 #include "util/rng.h"
+
+int32_t input_block = 0;
 
 int32_t horizon_speed  = -320;
 int32_t horizon_tick   =    0;
@@ -134,6 +137,7 @@ bool game_check_collision(lv_obj_t *a, lv_obj_t *b) {
 
 void appmodule_loop(uint32_t elapsedTime) {
   int i;
+  char *aDebug = NULL;
 
   // if (cactus_drag_dragging) {
   //   lv_point_t pointCursor;
@@ -191,12 +195,20 @@ void appmodule_loop(uint32_t elapsedTime) {
 
   } else if (game_state == GAME_STATE_RUNNING) {
 
-    // Track score
-    score_tick    += runner_speed_current * elapsedTime;
-    score_current += score_tick / 750;
-    score_tick     = score_tick % 750;
+    // Track score, 10 pts per second
+    score_tick    += 10 * elapsedTime;
+    score_current += score_tick / 1000;
+    score_tick     = score_tick % 1000;
     asprintf(&aScore, "%05d", score_current);
     lv_label_set_text(label_score, aScore);
+
+    // Update speed as needed
+    runner_speed_current = MIN(runner_speed_max, runner_speed_start + ((float)score_current/1000));
+
+    if (label_debug) {
+      asprintf(&aDebug, "SPD: %f", runner_speed_current);
+      lv_label_set_text(label_debug, aDebug);
+    }
 
     // Jump
     if (KEYS[APP_KEYCODE_SPACE] && (runner->base.pos.y == runner_groundY)) {
@@ -282,7 +294,7 @@ void appmodule_loop(uint32_t elapsedTime) {
       // Get the type we're spawning
       struct obstacle_type *type = NULL;
       do {
-        type = obstacle_types[rand() % obstacle_type_count];
+        type = obstacle_type_chanced[rand() % obstacle_type_chance_total];
       } while(type->minSpeed > runner_speed_current);
 
       // Select the next obstacle spawn position based on minimum gap
@@ -380,6 +392,9 @@ void appmodule_loop(uint32_t elapsedTime) {
       if (game_check_collision(runner->el, obstacles[i]->el)) {
         game_state = GAME_STATE_DEAD;
 
+        // Block inputs for a second
+        input_block = 1000;
+
         // Switch to dead sprite
         lv_image_set_offset_x(runner->el, -runner_dead_sourceX);
         lv_image_set_offset_y(runner->el, -runner_dead_sourceY);
@@ -399,9 +414,16 @@ void appmodule_loop(uint32_t elapsedTime) {
     // lv_obj_set_style_bg_opa(runner->el, LV_OPA_COVER, 0);
 
   } else if (game_state == GAME_STATE_DEAD) {
+    input_block -= elapsedTime;
+    if (input_block < 0) input_block = 0;
+
+    if (label_debug) {
+      asprintf(&aDebug, "BLK: %d", input_block);
+      lv_label_set_text(label_debug, aDebug);
+    }
 
     // Space pressed = restart
-    if (KEYS[APP_KEYCODE_SPACE]) {
+    if ((input_block == 0) && KEYS[APP_KEYCODE_SPACE]) {
       log_trace("Space was pressed, restarting");
       lv_image_set_offset_x(runner->el, -runner_walk_sourceX);
       lv_image_set_offset_y(runner->el, -runner_walk_sourceY);

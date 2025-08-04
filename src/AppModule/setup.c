@@ -59,9 +59,11 @@ lv_obj_t *screen_main;
 // lv_subject_t subj_horizon_offset;
 
 struct obstacle_type **obstacle_types = NULL;
+struct obstacle_type **obstacle_type_chanced = NULL;
 int obstacle_type_count               = 0;
 int obstacle_spawn_position           = 0;
 int obstacle_spawn_position_tick      = 0;
+int obstacle_type_chance_total        = 0;
 
 struct game_obj_drawn **obstacles = NULL;
 int obstacle_count = 0;
@@ -132,6 +134,7 @@ int runner_dead_width;
 int runner_dead_height;
 int runner_dead_count;
 
+lv_obj_t *label_debug = NULL;
 lv_obj_t *label_hiscore;
 lv_obj_t *label_score;
 int score_current = 0;
@@ -298,10 +301,17 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   lv_label_set_text(label_score, aScore);
   lv_label_set_text(label_hiscore, aHiScore);
 
+  // Build debug label
+  label_debug = lv_label_create(lv_screen_active());
+  lv_obj_set_align(label_debug, LV_ALIGN_TOP_LEFT);
+  lv_obj_set_pos(label_debug, 0, 0);
+  // lv_label_set_text(label_debug, "TEST");
+
   static lv_style_t hiscoreStyle;
   lv_style_init(&hiscoreStyle);
   lv_style_set_text_color(&hiscoreStyle, lv_color_hex(0x999999));
   lv_obj_add_style(label_hiscore, &hiscoreStyle, 0);
+  lv_obj_add_style(label_debug, &hiscoreStyle, 0);
 
   // Get the spritesheet config
   char *target_spritesheet = NULL;
@@ -478,37 +488,55 @@ int appmodule_setup(JSON_Object *obj_config_root) {
 
       // Build base obstacle with defaults
       obstacle_types = realloc(obstacle_types, sizeof(void*)*(obstacle_type_count+1));
-      obstacle_types[obstacle_type_count] = calloc(1, sizeof(struct obstacle_type));
-      obstacle_types[obstacle_type_count]->type        = json_object_get_string(obj_entry, "type");
-      obstacle_types[obstacle_type_count]->yPos        = json_object_get_number(obj_entry, "yPos");
-      obstacle_types[obstacle_type_count]->minGap      = 120;
-      obstacle_types[obstacle_type_count]->minSpeed    = 0;
-      obstacle_types[obstacle_type_count]->numFrames   = 1;
-      obstacle_types[obstacle_type_count]->speedOffset = 1;
-      obstacle_types[obstacle_type_count]->sprite_sourceX = json_object_get_number(obj_sprite, "x");
-      obstacle_types[obstacle_type_count]->sprite_sourceY = json_object_get_number(obj_sprite, "y");
-      obstacle_types[obstacle_type_count]->sprite_width   = json_object_get_number(obj_sprite, "w");
-      obstacle_types[obstacle_type_count]->sprite_height  = json_object_get_number(obj_sprite, "h");
-      obstacle_types[obstacle_type_count]->sprite_count   = json_object_get_number(obj_sprite, "c");
+      struct obstacle_type *type = obstacle_types[obstacle_type_count] = calloc(1, sizeof(struct obstacle_type));
+      type->type        = json_object_get_string(obj_entry, "type");
+      type->yPos        = json_object_get_number(obj_entry, "yPos");
+      type->minGap      = 120;
+      type->minSpeed    = 0;
+      type->numFrames   = 1;
+      type->speedOffset = 1;
+      type->chance      = 1;
+      type->sprite_sourceX = json_object_get_number(obj_sprite, "x");
+      type->sprite_sourceY = json_object_get_number(obj_sprite, "y");
+      type->sprite_width   = json_object_get_number(obj_sprite, "w");
+      type->sprite_height  = json_object_get_number(obj_sprite, "h");
+      type->sprite_count   = json_object_get_number(obj_sprite, "c");
 
       // Load up optional fields
       if (json_object_has_value_of_type(obj_entry, "minSpeed", JSONNumber)) {
-        obstacle_types[obstacle_type_count]->minSpeed = json_object_get_number(obj_entry, "minSpeed");
+        type->minSpeed = json_object_get_number(obj_entry, "minSpeed");
       }
       if (json_object_has_value_of_type(obj_entry, "minGap", JSONNumber)) {
-        obstacle_types[obstacle_type_count]->minGap = json_object_get_number(obj_entry, "minGap");
+        type->minGap = json_object_get_number(obj_entry, "minGap");
       }
       if (json_object_has_value_of_type(obj_entry, "numFrames", JSONNumber)) {
-        obstacle_types[obstacle_type_count]->numFrames = json_object_get_number(obj_entry, "numFrames");
+        type->numFrames = json_object_get_number(obj_entry, "numFrames");
       }
       if (json_object_has_value_of_type(obj_entry, "speedOffset", JSONNumber)) {
-        obstacle_types[obstacle_type_count]->speedOffset = json_object_get_number(obj_entry, "speedOffset");
+        type->speedOffset = json_object_get_number(obj_entry, "speedOffset");
+      }
+      if (json_object_has_value_of_type(obj_entry, "chance", JSONNumber)) {
+        type->chance = json_object_get_number(obj_entry, "chance");
       }
 
-      log_debug("Loaded obstacle '%s' on idx %d", json_object_get_string(obj_entry, "type"), obstacle_type_count);
+      log_debug("Loaded obstacle '%s' on idx %d, min: %f, chance: %d",
+          json_object_get_string(obj_entry, "type"),
+          obstacle_type_count,
+          type->minSpeed,
+          type->chance
+      );
+
+      // Add obstacle to the chance-weighted list
+      obstacle_type_chanced = realloc(obstacle_type_chanced, sizeof(void*)*(obstacle_type_chance_total + type->chance));
+      for(int j=0; j < type->chance; j++) {
+        obstacle_type_chanced[j+obstacle_type_chance_total] = type;
+      }
 
       obstacle_type_count++;
+      obstacle_type_chance_total += type->chance;
     }
+
+    printf("Total_chance: %d\n", obstacle_type_chance_total);
     // if (json_object_has_value_of_type(obj_backgroundElements, "cloud", JSONObject)) {
       // JSON_Object *obj_backgroundCloud = json_object_get_object(obj_backgroundElements, "cloud");
   }
