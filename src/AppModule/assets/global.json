@@ -92,7 +92,7 @@
       "enabled"       : true,
       "type"          : "obstacle3",
       "yPos"          : 90,
-      "minSpeed"      : 0,
+      "minSpeed"      : 7,
       "minGap"        : 120,
       "numFrames"     : 1,
 

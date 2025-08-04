@@ -59,7 +59,12 @@ lv_obj_t *screen_main;
 // lv_subject_t subj_horizon_offset;
 
 struct obstacle_type **obstacle_types = NULL;
-int obstacle_type_count = 0;
+int obstacle_type_count               = 0;
+int obstacle_spawn_position           = 0;
+int obstacle_spawn_position_tick      = 0;
+
+struct game_obj_drawn **obstacles = NULL;
+int obstacle_count = 0;
 
 int game_state;
 
@@ -410,6 +415,8 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   }
 
   // Load obstacle information
+  obstacles = malloc(sizeof(void*));
+  obstacle_spawn_position = display_width;
   if (json_object_has_value_of_type(obj_config_root, "obstacles", JSONArray)) {
     JSON_Array *arr_obstacles = json_object_get_array(obj_config_root, "obstacles");
     int arr_obstacles_length = json_array_get_count(arr_obstacles);
@@ -450,11 +457,12 @@ int appmodule_setup(JSON_Object *obj_config_root) {
       // Build base obstacle with defaults
       obstacle_types = realloc(obstacle_types, sizeof(void*)*(obstacle_type_count+1));
       obstacle_types[obstacle_type_count] = calloc(1, sizeof(struct obstacle_type));
-      obstacle_types[obstacle_type_count]->type      = json_object_get_string(obj_entry, "type");
-      obstacle_types[obstacle_type_count]->yPos      = json_object_get_number(obj_entry, "yPos");
-      obstacle_types[obstacle_type_count]->minGap    = 120;
-      obstacle_types[obstacle_type_count]->minSpeed  = 0;
-      obstacle_types[obstacle_type_count]->numFrames = 1;
+      obstacle_types[obstacle_type_count]->type        = json_object_get_string(obj_entry, "type");
+      obstacle_types[obstacle_type_count]->yPos        = json_object_get_number(obj_entry, "yPos");
+      obstacle_types[obstacle_type_count]->minGap      = 120;
+      obstacle_types[obstacle_type_count]->minSpeed    = 0;
+      obstacle_types[obstacle_type_count]->numFrames   = 1;
+      obstacle_types[obstacle_type_count]->speedOffset = 1;
       obstacle_types[obstacle_type_count]->sprite_sourceX = json_object_get_number(obj_sprite, "x");
       obstacle_types[obstacle_type_count]->sprite_sourceY = json_object_get_number(obj_sprite, "y");
       obstacle_types[obstacle_type_count]->sprite_width   = json_object_get_number(obj_sprite, "w");
@@ -470,6 +478,9 @@ int appmodule_setup(JSON_Object *obj_config_root) {
       }
       if (json_object_has_value_of_type(obj_entry, "numFrames", JSONNumber)) {
         obstacle_types[obstacle_type_count]->numFrames = json_object_get_number(obj_entry, "numFrames");
+      }
+      if (json_object_has_value_of_type(obj_entry, "speedOffset", JSONNumber)) {
+        obstacle_types[obstacle_type_count]->speedOffset = json_object_get_number(obj_entry, "speedOffset");
       }
 
       log_debug("Loaded obstacle '%s' on idx %d", json_object_get_string(obj_entry, "type"), obstacle_type_count);

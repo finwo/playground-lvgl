@@ -76,15 +76,16 @@ struct game_velocity {
 struct game_obj_base {
   struct game_position pos;
   struct game_velocity speed;
+  void *udata;
 };
 
 struct trait_sprite {
-  char *texture;
   int source_x;
   int source_y;
   int width;
   int height;
   int index;
+  int count;
 };
 
 struct game_obj_drawn {
@@ -150,9 +151,11 @@ extern int runner_duck_height;
 extern int runner_duck_count;
 
 extern struct game_obj_drawn **obstacles;
+extern int obstacle_count;
 
 struct obstacle_type {
   const char *type;
+  double speedOffset;
   int yPos;
   int minSpeed;
   int minGap;
@@ -166,8 +169,8 @@ struct obstacle_type {
 
 extern struct obstacle_type **obstacle_types;
 extern int obstacle_type_count;
-
-
+extern int obstacle_spawn_position;
+extern int obstacle_spawn_position_tick;
 
 extern lv_obj_t *label_hiscore;
 extern lv_obj_t *label_score;

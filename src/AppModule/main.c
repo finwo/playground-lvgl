@@ -1,5 +1,17 @@
 
+
 #include "appmodule.h"
+#include <stdlib.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+
+#include "rxi/log.h"
+
 #include "lvgl/src/core/lv_obj_pos.h"
 #include "lvgl/src/core/lv_obj_tree.h"
 #include "lvgl/src/display/lv_display.h"
@@ -9,15 +21,6 @@
 #include "lvgl/src/misc/lv_types.h"
 #include "lvgl/src/others/observer/lv_observer.h"
 #include "lvgl/src/widgets/image/lv_image.h"
-#include <math.h>
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <stdint.h>
-#include <stdio.h>
-
-#include "rxi/log.h"
 
 #include "AppModule/appmodule.h"
 #include "util/rng.h"
@@ -251,6 +254,76 @@ void appmodule_loop(uint32_t elapsedTime) {
         (runner->base.pos.x * display_scaling) + (runner->base.speed.x_tick * display_scaling / time_window) + ((runner_walk_width - runner_jump_width)/2),
         (runner->base.pos.y * display_scaling) + (runner->base.speed.y_tick * display_scaling / time_window) + ((runner_walk_height - runner_jump_height)/2)
       );
+    }
+
+    // Update obstacle spawn position tracking
+    obstacle_spawn_position_tick -= elapsedTime * runner_speed_current * time_window / 30;
+    obstacle_spawn_position      += obstacle_spawn_position_tick / time_window;
+    obstacle_spawn_position_tick  = obstacle_spawn_position_tick % time_window;
+
+    // Spawn new obstacle as needed
+    if (obstacle_spawn_position <= display_width) {
+
+      // Append new obstacle to the array
+      obstacles = realloc(obstacles, sizeof(void*) * (obstacle_count+1));
+      struct game_obj_drawn *obstacle = obstacles[obstacle_count] = calloc(1, sizeof(struct game_obj_drawn));
+      obstacle_count++;
+
+      // Get the type we're spawning
+      struct obstacle_type *type = NULL;
+      do {
+        type = obstacle_types[rand() % obstacle_type_count];
+      } while(type->minSpeed > runner_speed_current);
+
+      // Select the next obstacle spawn position based on minimum gap
+      obstacle_spawn_position += rand_between(type->minGap, display_width);
+
+      // Configure the obstacle
+      obstacle->base.udata      = type;
+      obstacle->sprite.index    = 0;
+      obstacle->sprite.count    = type->sprite_count;
+      obstacle->sprite.height   = type->sprite_height;
+      obstacle->sprite.width    = type->sprite_width;
+      obstacle->sprite.source_x = type->sprite_sourceX;
+      obstacle->sprite.source_y = type->sprite_sourceY;
+      obstacle->base.pos.y      = type->yPos;
+      obstacle->base.pos.x      = display_width;
+      obstacle->el              = lv_image_create(lv_screen_active());
+      lv_image_set_src(obstacle->el, buf_spritesheet);
+      lv_image_set_inner_align(obstacle->el, LV_IMAGE_ALIGN_TOP_LEFT);
+      lv_image_set_offset_x(obstacle->el, 0 - obstacle->sprite.source_x);
+      lv_image_set_offset_y(obstacle->el, 0 - obstacle->sprite.source_y);
+      lv_obj_set_x(obstacle->el, obstacle->base.pos.x * display_scaling);
+      lv_obj_set_y(obstacle->el, obstacle->base.pos.y * display_scaling);
+      lv_obj_set_size(obstacle->el, obstacle->sprite.width, obstacle->sprite.height);
+    }
+
+    // Move obstacles
+    for(i=0; i < obstacle_count; i++) {
+      struct game_obj_drawn *obstacle = obstacles[i];
+      struct obstacle_type  *type     = (struct obstacle_type *)obstacle->base.udata;
+
+      // Glide left (because <0)
+      obstacle->base.speed.x_tick -= elapsedTime * runner_speed_current * time_window / 30 * type->speedOffset;
+      obstacle->base.pos.x        += obstacle->base.speed.x_tick / time_window;
+      obstacle->base.speed.x_tick  = obstacle->base.speed.x_tick % time_window;
+
+      // Move the sprite
+      lv_obj_set_x(obstacle->el, (obstacle->base.pos.x * display_scaling) + (obstacle->base.speed.x_tick * display_scaling / time_window));
+      lv_obj_set_y(obstacle->el, (obstacle->base.pos.y * display_scaling) + (obstacle->base.speed.y_tick * display_scaling / time_window));
+    }
+
+    // Remove obstacle if out of view
+    while(
+      (obstacle_count > 0) &&
+      (obstacles[0]->base.pos.x < (0 - (obstacles[0]->sprite.width / display_scaling)))
+    ) {
+      obstacle_count--;
+      lv_obj_delete(obstacles[0]->el);
+      free(obstacles[0]);
+      for(i=0; i<obstacle_count; i++) {
+        obstacles[i] = obstacles[i+1];
+      }
     }
 
     // Update ground
