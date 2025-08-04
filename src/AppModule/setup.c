@@ -135,6 +135,7 @@ int runner_dead_height;
 int runner_dead_count;
 
 lv_obj_t *label_debug = NULL;
+lv_obj_t *label_death = NULL;
 lv_obj_t *label_hiscore;
 lv_obj_t *label_score;
 int score_current = 0;
@@ -305,7 +306,6 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   label_debug = lv_label_create(lv_screen_active());
   lv_obj_set_align(label_debug, LV_ALIGN_TOP_LEFT);
   lv_obj_set_pos(label_debug, 0, 0);
-  // lv_label_set_text(label_debug, "TEST");
 
   static lv_style_t hiscoreStyle;
   lv_style_init(&hiscoreStyle);
@@ -605,6 +605,18 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   lv_obj_set_x(img, runner->base.pos.x * display_scaling);
   lv_obj_set_y(img, runner->base.pos.y * display_scaling);
   lv_obj_set_size(img, runner_idle_width, runner_idle_height);
+
+  // Pre-build the death label
+  label_death = lv_label_create(lv_screen_active());
+  lv_label_set_text(label_death, "G A M E  O V E R");
+  lv_obj_set_x(label_death, display_width * display_scaling * 2);
+
+  static lv_style_t textStyle;
+  lv_style_init(&textStyle);
+  lv_style_set_text_color(&textStyle, lv_color_hex(0x555555));
+  lv_obj_add_style(label_death, &textStyle, 0);
+  lv_obj_add_style(label_score, &textStyle, 0);
+
 
   // // Gray background on the runner
   // lv_obj_set_style_bg_color(img, lv_color_hex(0xFF0000), 0);

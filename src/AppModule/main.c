@@ -407,6 +407,9 @@ void appmodule_loop(uint32_t elapsedTime) {
         score_record = MAX(score_record, score_current);
         asprintf(&aHiScore, "HI %05d", score_record);
         lv_label_set_text(label_hiscore, aHiScore);
+
+        // Center death text
+        lv_obj_center(label_death);
       }
     }
 
@@ -434,6 +437,9 @@ void appmodule_loop(uint32_t elapsedTime) {
         free(obstacles[i]);
       }
       obstacle_count = 0;
+
+      // Move death label off screen again
+      lv_obj_set_x(label_death, display_width * display_scaling * 2);
 
       // Reset score
       score_current = 0;

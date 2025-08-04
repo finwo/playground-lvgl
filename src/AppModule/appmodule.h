@@ -182,6 +182,7 @@ extern int obstacle_spawn_position_tick;
 extern int obstacle_type_chance_total;
 
 extern lv_obj_t *label_debug;
+extern lv_obj_t *label_death;
 extern lv_obj_t *label_hiscore;
 extern lv_obj_t *label_score;
 extern int score_current;
