@@ -298,7 +298,10 @@ void appmodule_loop(uint32_t elapsedTime) {
       } while(type->minSpeed > runner_speed_current);
 
       // Select the next obstacle spawn position based on minimum gap
-      obstacle_spawn_position += rand_between(type->minGap, display_width);
+      obstacle_spawn_position += rand_between(
+          runner_speed_current / runner_speed_start * type->minGap,
+          runner_speed_current / runner_speed_start * display_width
+      );
 
       // Configure the obstacle
       obstacle->base.udata      = type;
