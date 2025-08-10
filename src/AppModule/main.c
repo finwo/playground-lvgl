@@ -11,6 +11,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdio.h>
 
+#include "tidwall/buf.h"
 #include "rxi/log.h"
 
 #include "lvgl/src/core/lv_obj_pos.h"
@@ -24,6 +25,7 @@ extern "C" {
 #include "lvgl/src/widgets/image/lv_image.h"
 
 #include "AppModule/appmodule.h"
+#include "util/fs.h"
 #include "util/rng.h"
 
 int32_t input_block = 0;
@@ -406,10 +408,19 @@ void appmodule_loop(uint32_t elapsedTime) {
         lv_obj_set_x(runner->el, (runner->base.pos.x * display_scaling) + (runner->base.speed.x_tick * display_scaling / time_window));
         lv_obj_set_y(runner->el, (runner->base.pos.y * display_scaling) + (runner->base.speed.y_tick * display_scaling / time_window));
 
-        // Update hiscore
+        // Update hiscore on screen
         score_record = MAX(score_record, score_current);
         asprintf(&aHiScore, "HI %05d", score_record);
         lv_label_set_text(label_hiscore, aHiScore);
+
+        // Update hiscore in save file
+        json_object_set_number(obj_save, "hiscore", score_record);
+        struct buf *saveFileContents = calloc(1, sizeof(struct buf));
+        saveFileContents->data = json_serialize_to_string_pretty(save_root);
+        saveFileContents->len  = strlen(saveFileContents->data);
+        file_put_contents(saveFile, saveFileContents, 0);
+        buf_clear(saveFileContents);
+        free(saveFileContents);
 
         // Center death text
         lv_obj_center(label_death);

@@ -138,10 +138,14 @@ lv_obj_t *label_debug = NULL;
 lv_obj_t *label_death = NULL;
 lv_obj_t *label_hiscore;
 lv_obj_t *label_score;
-int score_current = 0;
-int score_record  = 0;
 char *aScore = 0;
 char *aHiScore = 0;
+
+int score_current = 0;
+int score_record  = 0;
+char *saveFile = NULL;
+JSON_Value *save_root = NULL;
+JSON_Object *obj_save = NULL;
 
 // struct game_obj_drawn *horizon_lines;
 // int horizon_lines_count;
@@ -228,6 +232,31 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   }
 
   log_info("Logging driver initialized: %s\n", loglevel);
+
+  // Ensure saveFile exists
+  asprintf(&saveFile, "%s%s", appDir, "/assets/save.json");
+  if (!file_exists(saveFile, "rw")) {
+    ssize_t written = file_put_contents(saveFile, &(struct buf){ .data = "{}", .len = 2 }, 0);
+    if (written != 2) {
+      log_fatal("could not initialize save file");
+      exit(1);
+    }
+  }
+
+  // Parse savestate
+  struct buf *saveFileContents = file_get_contents(saveFile);
+  save_root = json_parse_string(saveFileContents->data);
+  buf_clear(saveFileContents);
+  free(saveFileContents);
+  // Read the old hiscore
+  if (json_value_get_type(save_root) != JSONObject) {
+    log_fatal("assets/save.json is not an object");
+    exit(1);
+  }
+  obj_save = json_value_get_object(save_root);
+  if (json_object_has_value_of_type(obj_save, "hiscore", JSONNumber)) {
+    score_record = json_object_get_number(obj_save, "hiscore");
+  }
 
   // Disable scrolling, we're a game, not an app
   screen_main = lv_screen_active();

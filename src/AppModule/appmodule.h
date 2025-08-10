@@ -185,9 +185,13 @@ extern lv_obj_t *label_debug;
 extern lv_obj_t *label_death;
 extern lv_obj_t *label_hiscore;
 extern lv_obj_t *label_score;
-extern int score_current;
-extern int score_record;
 extern char *aScore;
 extern char *aHiScore;
+
+extern int score_current;
+extern int score_record;
+extern char *saveFile;
+extern JSON_Value *save_root;
+extern JSON_Object *obj_save;
 
 #endif // __APPMODULE_H__
