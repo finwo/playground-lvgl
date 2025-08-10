@@ -30,7 +30,9 @@ jobs:
         name: Install dep
 
       - name: Install dependencies
-        run: dep install
+        run: |
+          pacman -S rsync
+          dep install
         shell: bash
 
       - name: Build
