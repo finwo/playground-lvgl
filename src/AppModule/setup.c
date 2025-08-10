@@ -234,7 +234,7 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   log_info("Logging driver initialized: %s\n", loglevel);
 
   // Ensure saveFile exists
-  asprintf(&saveFile, "%s%s", appDir, "/assets/save.json");
+  asprintf(&saveFile, "%s%s", appDir, "/save.json");
   if (!file_exists(saveFile, "rw")) {
     ssize_t written = file_put_contents(saveFile, &(struct buf){ .data = "{}", .len = 2 }, 0);
     if (written != 2) {
@@ -373,7 +373,7 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   };
   lv_image_decoder_open(&dsc, &loader_dsc, NULL);
   buf_spritesheet = dsc.decoded;
-  lv_xml_register_image(NULL, "spritesheet", dsc.decoded);
+  // lv_xml_register_image(NULL, "spritesheet", dsc.decoded);
 
   // Load sprite info
   JSON_Object *obj_spriteset;

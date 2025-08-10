@@ -87,7 +87,7 @@ includeFiles+=src/AppModule/assets/global.json
 includeFiles+=src/AppModule/assets/offline-resources-1x.png
 includeFiles+=src/AppModule/assets/offline-resources-2x.png
 includeFiles+=src/AppModule/assets/public-pixel.ttf
-includeFiles+=$(wildcard src/*/screens/*.xml)
+# includeFiles+=$(wildcard src/*/screens/*.xml)
 
 .PHONY: default
 default: output/$(BIN) output/assets

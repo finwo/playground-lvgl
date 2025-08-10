@@ -13,7 +13,7 @@ DEPS+=$(wildcard src/*/*.c)
 DEPS+=$(wildcard src/*/assets/*.json)
 DEPS+=$(wildcard src/*/components/*.xml)
 DEPS+=$(wildcard src/*/components/*/*.xml)
-DEPS+=$(wildcard src/*/screens/*.xml)
+# DEPS+=$(wildcard src/*/screens/*.xml)
 DEPS+=$(wildcard target/${TARGET}/src/*.c)
 DEPS+=target/${TARGET}/src/lv_conf.h
 

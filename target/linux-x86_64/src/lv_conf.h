@@ -1172,7 +1172,7 @@
 #endif /*LV_USE_TEST*/
 
 /** Enable loading XML UIs runtime */
-#define LV_USE_XML    1
+#define LV_USE_XML    0
 
 /** 1: Enable text translation support */
 #define LV_USE_TRANSLATION 1
