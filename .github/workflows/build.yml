@@ -21,6 +21,7 @@ jobs:
             bin: stream-companion-win-x64.exe
     steps:
       - uses: actions/checkout@v3
+      - uses: GuillaumeFalourd/setup-rsync@v1.2
 
       - shell: bash
         run: |
