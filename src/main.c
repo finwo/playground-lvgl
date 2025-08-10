@@ -85,6 +85,7 @@ int main() {
 #else // no WINTERM
 int main() {
 #endif
+  log_set_level(LOG_ERROR);
 
   // Seed random, to not always produce the exact same results
   srand(time(NULL));

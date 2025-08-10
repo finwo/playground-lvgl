@@ -208,7 +208,7 @@ JSON_Object *obj_save = NULL;
 // }
 
 int appmodule_setup(JSON_Object *obj_config_root) {
-  const char *loglevel = "trace";
+  const char *loglevel = LOG_DEFAULT;
   int i;
   char *appDir = dirname(get_bin_path());
 
@@ -566,7 +566,7 @@ int appmodule_setup(JSON_Object *obj_config_root) {
       obstacle_type_chance_total += type->chance;
     }
 
-    printf("Total_chance: %d\n", obstacle_type_chance_total);
+    log_debug("Total_chance: %d\n", obstacle_type_chance_total);
     // if (json_object_has_value_of_type(obj_backgroundElements, "cloud", JSONObject)) {
       // JSON_Object *obj_backgroundCloud = json_object_get_object(obj_backgroundElements, "cloud");
   }
@@ -615,7 +615,7 @@ int appmodule_setup(JSON_Object *obj_config_root) {
     lv_obj_set_size(img, horizon_line_width, horizon_line_height);
 
     horizon_line_count++;
-    printf("Created ground line # %d\n", horizon_line_count);
+    log_trace("Created ground line # %d\n", horizon_line_count);
   }
 
   // Create runner

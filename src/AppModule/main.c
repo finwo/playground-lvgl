@@ -191,7 +191,7 @@ void appmodule_loop(uint32_t elapsedTime) {
       game_state           = GAME_STATE_RUNNING;
       runner_speed_current = runner_speed_start;
 
-      printf("Runner speed: %f\n", runner_speed_current);
+      log_debug("Runner speed: %f\n", runner_speed_current);
     }
 
 

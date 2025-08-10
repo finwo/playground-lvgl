@@ -17,6 +17,10 @@ extern const bool *KEYS;
 #define APP_KEYCODE_DOWN   81
 #define APP_KEYCODE_UP     82
 
+#ifndef LOG_DEFAULT
+#define LOG_DEFAULT "info"
+#endif
+
 // extern lv_obj_t *cactus;
 // extern bool cactus_drag_dragging;
 // extern int cactus_drag_offset_x;

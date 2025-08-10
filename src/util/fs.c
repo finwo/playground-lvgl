@@ -13,6 +13,7 @@
 
 #include "fs.h"
 
+#include "rxi/log.h"
 #include "tidwall/buf.h"
 #include "user-none/mkdirp.h"
 
@@ -84,7 +85,7 @@ ssize_t file_put_contents(const char *filename, const struct buf *data, int flag
 }
 
 struct buf * file_get_contents(const char *filename) {
-  printf("Opening: %s\n", filename);
+  log_trace("Opening: %s\n", filename);
 
   FILE *fd = fopen(filename, "r");
   if (!fd) {
