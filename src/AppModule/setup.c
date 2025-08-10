@@ -331,16 +331,17 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   lv_label_set_text(label_score, aScore);
   lv_label_set_text(label_hiscore, aHiScore);
 
-  // Build debug label
-  label_debug = lv_label_create(lv_screen_active());
-  lv_obj_set_align(label_debug, LV_ALIGN_TOP_LEFT);
-  lv_obj_set_pos(label_debug, 0, 0);
-
   static lv_style_t hiscoreStyle;
   lv_style_init(&hiscoreStyle);
   lv_style_set_text_color(&hiscoreStyle, lv_color_hex(0x999999));
   lv_obj_add_style(label_hiscore, &hiscoreStyle, 0);
-  lv_obj_add_style(label_debug, &hiscoreStyle, 0);
+
+  // // Build debug label
+  // label_debug = lv_label_create(lv_screen_active());
+  // lv_obj_set_align(label_debug, LV_ALIGN_TOP_LEFT);
+  // lv_obj_set_pos(label_debug, 0, 0);
+  // lv_obj_add_style(label_debug, &hiscoreStyle, 0);
+
 
   // Get the spritesheet config
   char *target_spritesheet = NULL;
