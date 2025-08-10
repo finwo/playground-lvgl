@@ -1,0 +1,134 @@
+---
+
+name: Build
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+
+  # build-windows:
+  #   name: Build and upload artifact
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - os: windows-latest
+  #           cc: clang
+  #           cpp: clang++
+  #           bin: stream-companion-win-x64.exe
+  #   steps:
+  #     - uses: actions/checkout@v3
+
+  #     - shell: bash
+  #       run: |
+  #         echo "/c/msys64/mingw64/bin" >> $GITHUB_PATH
+
+  #     - uses: finwo/dep@main
+  #       name: Install dep
+
+  #     - name: Install dependencies
+  #       run: dep install
+  #       shell: bash
+
+  #     - name: Pre-render html
+  #       shell: bash
+  #       run: |
+  #         make -j headertools CC=${{ matrix.cc }}
+
+  #     - name: Build
+  #       run: make -j CC=${{ matrix.cc }} CPP=${{ matrix.cpp }} BIN=${{ matrix.bin }}
+  #       shell: bash
+
+  #     - name: Upload binaries to release
+  #       uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
+  #         file: ${{ matrix.bin }}
+  #         file_glob: true
+  #         overwrite: true
+  #         tag: ${{ github.ref }}
+
+  build-linux:
+    name: Build and upload artifact
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+
+          # - distro: ubuntu_latest
+          #   arch: aarch64
+          #   target: linux-aarch64
+          #   cc: gcc
+          #   cpp: g++
+
+          # - distro: ubuntu_latest
+          #   arch: armv7
+          #   target: linux-armv7
+          #   cc: gcc
+          #   cpp: g++
+
+          # - distro: ubuntu_latest
+          #   arch: riscv64
+          #   target: linux-riscv64
+          #   cc: gcc
+          #   cpp: g++
+
+          - distro: ubuntu_latest
+            arch: none
+            target: linux-x86_64
+            cc: gcc
+            cpp: g++
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - uses: finwo/dep@main
+        name: Install dep
+
+      - name: Install dependencies
+        shell: bash
+        run: dep install
+
+      # - name: Pre-render html
+      #   shell: bash
+      #   run: |
+      #     make -j headertools CC=${{ matrix.cc }}
+
+      - if: ${{ matrix.arch != 'none' }}
+        uses: uraimo/run-on-arch-action@v2
+        name: Build
+        id: runcmd
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ${{ matrix.distro }}
+          githubToken: ${{ github.token }}
+
+          install: |
+            apt-get update -y
+            apt-get install -yq build-essential libglib2.0-dev libsdl2-dev zip
+
+          run: |
+            make -j CC=${{ matrix.cc }} CPP=${{ matrix.cpp }} TARGET=${{ matrix.target }}
+
+      - if: ${{ matrix.arch == 'none' }}
+        name: Build
+        shell: bash
+        run: |
+          sudo apt-get update -yq
+          sudo apt-get install -yq build-essential libglib2.0-dev libsdl2-dev zip
+          make -j CC=${{ matrix.cc }} CPP=${{ matrix.cpp }} TARGET=${{ matrix.target }}
+          cd build
+          mv output playground-lvgl
+          zip -r playground-lvgl-${{ matrix.target }}.zip playground-lvgl
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/playground-lvgl-${{ matrix.target }}.zip
+          file_glob: true
+          overwrite: true
+          tag: ${{ github.ref }}
