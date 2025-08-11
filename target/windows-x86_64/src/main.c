@@ -159,20 +159,20 @@ int main() {
 
   lv_lock();
 
-  lvMouse = lv_windows_acquire_pointer_indev(display);
+  lvMouse = lv_windows_acquire_pointer_indev(lvDisplay);
   if (!lvMouse) {
     log_fatal("Could not initialize mouse");
     return -1;
   }
 
-  lvKeyboard = lv_windows_acquire_keypad_indev(display);
+  lvKeyboard = lv_windows_acquire_keypad_indev(lvDisplay);
   if (!lvKeyboard) {
     log_fatal("Could not initialize keyboard");
     return -1;
   }
 
   // TODO: this the mouse wheel?
-  // lv_indev_t* encoder_device = lv_windows_acquire_encoder_indev(display);
+  // lv_indev_t* encoder_device = lv_windows_acquire_encoder_indev(lvDisplay);
   // if (!encoder_device) {
   //     return -1;
   // }
