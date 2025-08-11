@@ -31,7 +31,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          choco install --no-progress rsync
           dep install
         shell: bash
 
