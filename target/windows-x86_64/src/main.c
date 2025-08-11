@@ -42,7 +42,7 @@ int display_height;
 
 const bool *KEYS;
 
-#include<sys/time.h>
+#include "win32ports/time.h"
 long long timeInMilliseconds(void) {
     struct timeval tv;
     gettimeofday(&tv,NULL);
