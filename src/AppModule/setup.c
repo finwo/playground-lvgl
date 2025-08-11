@@ -239,8 +239,8 @@ int appmodule_setup(JSON_Object *obj_config_root) {
   // Ensure saveFile exists
   asprintf(&saveFile, "%s%s", appDir, "/save.json");
   if (!file_exists(saveFile, "rw")) {
-    ssize_t written = file_put_contents(saveFile, &(struct buf){ .data = "{}", .len = 2 }, 0);
-    if (written != 2) {
+    ssize_t written = file_put_contents(saveFile, &(struct buf){ .data = "{}\n", .len = 3 }, 0);
+    if (written != 3) {
       log_fatal("could not initialize save file");
       exit(1);
     }

@@ -422,6 +422,7 @@ void appmodule_loop(uint32_t elapsedTime) {
         struct buf *saveFileContents = calloc(1, sizeof(struct buf));
         saveFileContents->data = json_serialize_to_string_pretty(save_root);
         saveFileContents->len  = strlen(saveFileContents->data);
+        buf_append_byte(saveFileContents, '\n');
         file_put_contents(saveFile, saveFileContents, 0);
         buf_clear(saveFileContents);
         free(saveFileContents);

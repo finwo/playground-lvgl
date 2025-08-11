@@ -12,10 +12,17 @@
 
 extern const bool *KEYS;
 
+#ifdef _WIN32
+#define APP_KEYCODE_ESCAPE VK_ESCAPE
+#define APP_KEYCODE_SPACE  VK_SPACE
+#define APP_KEYCODE_DOWN   VK_DOWN
+#define APP_KEYCODE_UP     VK_UP
+#else
 #define APP_KEYCODE_ESCAPE 41
 #define APP_KEYCODE_SPACE  44
 #define APP_KEYCODE_DOWN   81
 #define APP_KEYCODE_UP     82
+#endif
 
 #ifndef LOG_DEFAULT
 #define LOG_DEFAULT "info"

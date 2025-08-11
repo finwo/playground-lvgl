@@ -4,19 +4,15 @@ extern "C" {
 
 #include "lvgl/src/drivers/sdl/lv_sdl_window.h"
 
-#include <SDL2/SDL_keyboard.h>
+// #include <SDL2/SDL_keyboard.h>
 #include <stdint.h>
 
 #ifndef _GNU_SOURCE
 #include "finwo/asprintf.h"
 #endif
 
-#ifdef _WIN32
 #include <windows.h>
-#else
-// #include <pthread.h>
-#include <unistd.h>
-#endif
+#include <winuser.h>
 
 // Only used to suppress warnings caused by unused parameters.
 #ifndef UNUSED
@@ -40,14 +36,18 @@ lv_indev_t *lvMouse;
 lv_indev_t *lvMouseWheel;
 lv_indev_t *lvKeyboard;
 
-// lfs_t      lfs;
-// lfs_file_t file;
-
 int display_scaling;
 int display_width;
 int display_height;
 
 const bool *KEYS;
+
+#include<sys/time.h>
+long long timeInMilliseconds(void) {
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    return (((long long)tv.tv_sec)*1000)+(tv.tv_usec/1000);
+}
 
 #if LV_USE_LOG != 0
 static void lv_log_print_g_cb(lv_log_level_t level, const char * buf) {
@@ -55,27 +55,6 @@ static void lv_log_print_g_cb(lv_log_level_t level, const char * buf) {
     UNUSED(buf);
 }
 #endif
-
-// // Not an option, crashes lvgl because we rob the events
-// void handle_sdl_keyboard() {
-//   SDL_Event event;
-//   while (SDL_PollEvent(&event)) {
-//     switch (event.type) {
-//       case SDL_KEYDOWN:
-//         if (event.key.keysym.sym >= 0 && event.key.keysym.sym < 322) {
-//           KEYS[event.key.keysym.sym] = true;
-//         }
-//         break;
-//       case SDL_KEYUP:
-//         if (event.key.keysym.sym >= 0 && event.key.keysym.sym < 322) {
-//           KEYS[event.key.keysym.sym] = false;
-//         }
-//         break;
-//       default:
-//         break;
-//     }
-//   }
-// }
 
 #ifndef WINTERM
 #ifdef _WIN32
@@ -96,43 +75,6 @@ int main() {
   srand(time(NULL));
 
   lv_init();
-
-  // printf("--- Initializing rambd\n");
-  // const struct lfs_rambd_config bdcfg = {
-  //   .prog_size   = 4096,
-  //   .read_size   = 4096,
-  //   .erase_size  = 4096,
-  //   .erase_count = 512,
-  // };
-  // const struct lfs_config cfg = {
-  //   .context        = calloc(1, sizeof(lfs_rambd_t)),
-  //   .read           = lfs_rambd_read,
-  //   .prog           = lfs_rambd_prog,
-  //   .erase          = lfs_rambd_erase,
-  //   .sync           = lfs_rambd_sync,
-  //   .read_size      = bdcfg.read_size,
-  //   .prog_size      = bdcfg.prog_size,
-  //   .block_size     = bdcfg.erase_size,
-  //   .block_count    = bdcfg.erase_count,
-  //   .cache_size     = bdcfg.read_size,
-  //   .lookahead_size = bdcfg.read_size,
-  //   .block_cycles   = -1,
-  // };
-  // lfs_rambd_create(&cfg, &bdcfg);
-  // printf("  - created\n");
-  // // mount the filesystem
-  // int err = lfs_mount(&lfs, &cfg);
-  // printf("  - mount : %d\n", err);
-  // // reformat if we can't mount the filesystem
-  // // this should only happen on the first boot
-  // if (err) {
-  //   err = lfs_format(&lfs, &cfg);
-  //   printf("  - format: %d\n", err);
-  //   err = lfs_mount(&lfs, &cfg);
-  //   printf("  - mount : %d\n", err);
-  // }
-  // lv_littlefs_set_handler(&lfs);
-  // printf("  - handler set\n");
 
   // Workaround for sdl2 `-m32` crash
   // https://bugs.launchpad.net/ubuntu/+source/libsdl2/+bug/1775067/comments/7
@@ -200,33 +142,68 @@ int main() {
   lv_log_register_print_cb(lv_log_print_g_cb);
   #endif
 
-  /* Add a display
-  * Use the 'monitor' driver which creates window on PC's monitor to simulate a display*/
-  lvDisplay    = lv_sdl_window_create(display_width * display_scaling, display_height * display_scaling);
-  lvMouse      = lv_sdl_mouse_create();
-  lvMouseWheel = lv_sdl_mousewheel_create();
-  lvKeyboard   = lv_sdl_keyboard_create();
+  int32_t zoom_level = 100;
+  bool allow_dpi_override = false;
+  bool simulator_mode = false;
+  lvDisplay = lv_windows_create_display(
+      L"LVGL Playground",
+      display_width  * display_scaling,
+      display_height * display_scaling,
+      zoom_level,
+      allow_dpi_override,
+      simulator_mode);
+  if (!lvDisplay) {
+    log_fatal("Could not initialize display");
+    return -1;
+  }
 
-  lv_sdl_window_set_resizeable(lvDisplay, false);
+  lv_lock();
+
+  lvMouse = lv_windows_acquire_pointer_indev(display);
+  if (!lvMouse) {
+    log_fatal("Could not initialize mouse");
+    return -1;
+  }
+
+  lvKeyboard = lv_windows_acquire_keypad_indev(display);
+  if (!lvKeyboard) {
+    log_fatal("Could not initialize keyboard");
+    return -1;
+  }
+
+  // TODO: this the mouse wheel?
+  // lv_indev_t* encoder_device = lv_windows_acquire_encoder_indev(display);
+  // if (!encoder_device) {
+  //     return -1;
+  // }
+
+  // TODO:
+  // lv_sdl_window_set_resizeable(lvDisplay, false);
 
   // Setup keyboard handling
   // No need to update in loop, points to SDL internal array
   // No need to translate keycodes, we're following USB standard just like SDL
-  KEYS = (const bool *)SDL_GetKeyboardState(NULL);
+  KEYS = calloc(256, sizeof(PBYTE));
+  if (!GetKeyboardState(&KEYS)) {
+    log_fatal("Could not get initial keyboard state");
+    return 1;
+  }
 
   if (appmodule_setup(obj_root)) {
     log_fatal("Error setting up AppModule");
     return 1;
   }
 
-  Uint32 lastTick = SDL_GetTicks();
-  while(1) {
-    SDL_Delay(5);
-    Uint32 current = SDL_GetTicks();
+  lv_unlock();
+
+  long long lastTick = timeInMilliseconds();
+  while (1) {
+    long long current = timeInMilliseconds();
     appmodule_loop(current - lastTick);
-    lv_tick_inc(current - lastTick); // Update the tick timer. Tick is new for LVGL 9
+    uint32_t time_till_next = lv_timer_handler();
+    if(time_till_next == LV_NO_TIMER_READY) time_till_next = LV_DEF_REFR_PERIOD;
+    lv_delay_ms(time_till_next);
     lastTick = current;
-    lv_timer_handler(); // Update the UI-
   }
 
   return 0;
