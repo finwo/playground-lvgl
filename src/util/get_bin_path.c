@@ -13,8 +13,13 @@
 #define MIN(a,b) (a<b?a:b)
 #endif
 
+
 char * get_bin_path() {
+#if defined(_WIN32) || defined(_WIN64)
+  int len = MAX_PATH + 1;
+#else
   int len = PATH_MAX + 1;
+#endif
   char *output = calloc(len, sizeof(char));
 
 #if defined(_WIN32) || defined(_WIN64)
