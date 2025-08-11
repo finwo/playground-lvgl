@@ -6,13 +6,13 @@
 #include <io.h>
 #include <windows.h>
 #else
-#include <libgen.h>
 #include <pwd.h>
 #include <unistd.h>
 #endif
 
 #include "fs.h"
 
+#include "finwo/io.h"
 #include "rxi/log.h"
 #include "tidwall/buf.h"
 #include "user-none/mkdirp.h"
@@ -46,6 +46,7 @@ char *dirname(const char *path) {
 
 // Returns bytes written
 ssize_t file_put_contents(const char *filename, const struct buf *data, int flags) {
+  log_trace("file_put_contents(%s, %d, ...)", filename, data->len);
   char *dir = NULL;
   char *dup = NULL;
 
@@ -61,48 +62,52 @@ ssize_t file_put_contents(const char *filename, const struct buf *data, int flag
   }
 
   // Actualle open + write + close the file
-  FILE *fd = fopen(filename, "w+");
+  int fd = open_os(filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+  log_trace("  FD: %d", fd);
   ssize_t written = 0;
   ssize_t check   = 0;
   int tries = 3;
   while((written < (data->len)) && ((tries--) >= 0)) {
-    written += fwrite(
-        data->data + written,
-        1,
-        data->len - written,
-        fd
-    );
+    written += write_os(fd, data->data + written, data->len - written);
     if (written < check) {
-      fclose(fd);
-      perror("fwrite");
+      close_os(fd);
+      perror("write");
       return -1;
     }
     check = written;
   }
-  fclose(fd);
+  close_os(fd);
+
+  log_trace("Written a total of %ld bytes to %s\n", written, filename);
 
   return written;
 }
 
 struct buf * file_get_contents(const char *filename) {
-  log_trace("Opening: %s\n", filename);
+  log_trace("file_get_contents(%s)", filename);
 
-  FILE *fd = fopen(filename, "r");
+  int fd = open_os(filename, O_RDWR | O_CREAT);
+  log_trace("  FD: %d", fd);
   if (!fd) {
-    perror("fopen");
+    perror("open");
     return NULL;
   }
 
+  ssize_t filesize = seek_os(fd, 0, SEEK_END);
+  seek_os(fd, 0, SEEK_SET);
+
   char *intermediate = malloc(BUFSIZ);
   struct buf *output = calloc(1, sizeof(struct buf));
-  size_t    read = 0;
-  while(!feof(fd)) {
-    read = fread(intermediate, 1, BUFSIZ, fd);
-    buf_append(output, intermediate, read);
+  size_t n = 0;
+  while(seek_os(fd, 0, SEEK_CUR) < filesize) {
+    n = read_os(fd, intermediate, BUFSIZ);
+    buf_append(output, intermediate, n);
   }
 
-  fclose(fd);
+  close_os(fd);
   free(intermediate);
+
+  log_trace("Read a total of %ld bytes from %s\n", output->len, filename);
 
   return output;
 }
