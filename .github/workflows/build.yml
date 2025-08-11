@@ -31,7 +31,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pacman -S rsync
+          choco install --no-progress rsync
           dep install
         shell: bash
 
