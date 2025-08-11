@@ -86,7 +86,7 @@ ssize_t file_put_contents(const char *filename, const struct buf *data, int flag
 struct buf * file_get_contents(const char *filename) {
   log_trace("file_get_contents(%s)", filename);
 
-  int fd = open_os(filename, O_RDWR | O_CREAT);
+  int fd = open_os(filename, O_RDWR);
   log_trace("  FD: %d", fd);
   if (!fd) {
     perror("open");
