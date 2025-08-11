@@ -1,7 +1,15 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "lvgl/src/drivers/sdl/lv_sdl_window.h"
 
 #include <SDL2/SDL_keyboard.h>
 #include <stdint.h>
+
+#ifndef _GNU_SOURCE
+#include "finwo/asprintf.h"
+#endif
 
 #ifdef _WIN32
 #include <windows.h>
@@ -237,4 +245,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
   return main();
 }
 #endif
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif

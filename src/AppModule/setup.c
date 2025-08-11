@@ -16,6 +16,10 @@
 extern "C" {
 #endif
 
+#ifndef _GNU_SOURCE
+#include "finwo/asprintf.h"
+#endif
+
 #ifndef NULL
 #define NULL ((void*)0)
 #endif

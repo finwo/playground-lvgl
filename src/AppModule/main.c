@@ -7,6 +7,10 @@
 extern "C" {
 #endif
 
+#ifndef _GNU_SOURCE
+#include "finwo/asprintf.h"
+#endif
+
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
