@@ -9,13 +9,12 @@ on:
 jobs:
 
   build-windows:
-    name: Build and upload artifact
-    runs-on: ${{ matrix.os }}
+    name: Build and upload windows artifact
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            target: windows-x86_64
+          - target: windows-x86_64
             cc: x86_64-w64-mingw32-gcc
             cpp: x86_64-w64-mingw32-g++
             bin: stream-companion-win-x64.exe
@@ -48,33 +47,29 @@ jobs:
           tag: ${{ github.ref }}
 
   build-linux:
-    name: Build and upload artifact
+    name: Build and upload linux artifact
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
 
-          # - distro: ubuntu_latest
+          # - target: linux-aarch64
           #   arch: aarch64
-          #   target: linux-aarch64
           #   cc: gcc
           #   cpp: g++
 
-          # - distro: ubuntu_latest
+          # - target: linux-armv7
           #   arch: armv7
-          #   target: linux-armv7
           #   cc: gcc
           #   cpp: g++
 
-          # - distro: ubuntu_latest
+          # - target: linux-riscv64
           #   arch: riscv64
-          #   target: linux-riscv64
           #   cc: gcc
           #   cpp: g++
 
-          - distro: ubuntu_latest
+          - target: linux-x86_64
             arch: none
-            target: linux-x86_64
             cc: gcc
             cpp: g++
 
@@ -95,7 +90,7 @@ jobs:
         id: runcmd
         with:
           arch: ${{ matrix.arch }}
-          distro: ${{ matrix.distro }}
+          distro: ubuntu_latest
           githubToken: ${{ github.token }}
 
           install: |
