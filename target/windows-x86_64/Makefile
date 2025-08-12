@@ -26,7 +26,7 @@ override LDFLAGS+=$(shell pkg-config --libs sdl2)
 
 ifeq ($(OS),Windows_NT)
 	# CFLAGS += -D WIN32
-	override CPPFLAGS+=-lstdc++
+	# override CPPFLAGS+=-lstdc++
 	override CPPFLAGS+=
 	ifeq ($(PROCESSOR_ARCHITEW6432),AMD64)
 		# CFLAGS += -D AMD64
