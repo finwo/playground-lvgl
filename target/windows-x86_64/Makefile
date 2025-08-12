@@ -19,20 +19,19 @@ override CFLAGS+=-I src -DDLV_CONF_INCLUDE_SIMPLE
 override LDFLAGS?=
 override CPPFLAGS?=
 
-override LDFLAGS+=$(shell pkg-config --libs sdl2)
+# override LDFLAGS+=$(shell pkg-config --libs sdl2)
 
 # override CFLAGS+=-D WEBVIEW_STATIC
 # override CFLAGS+=-D WINTERM
 
 ifeq ($(OS),Windows_NT)
-	# CFLAGS += -D WIN32
+	override CFLAGS += -D WIN32 -D _WIN32
 	# override CPPFLAGS+=-lstdc++
-	override CPPFLAGS+=
 	ifeq ($(PROCESSOR_ARCHITEW6432),AMD64)
-		# CFLAGS += -D AMD64
+		override CFLAGS += -D AMD64 -D _WIN64
 	else
 		ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
-			# CFLAGS += -D AMD64
+			override CFLAGS += -D AMD64 -D _WIN64
 		endif
 		ifeq ($(PROCESSOR_ARCHITECTURE),x86)
 			# CFLAGS += -D IA32
