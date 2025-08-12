@@ -5,6 +5,7 @@ extern "C" {
 #include "strcasecmp.h"
 
 #if defined(_WIN32) || defined(_WIN64)
+#include <ctype.h>
 
 int strcasecmp(const char *a, const char *b) {
   int ca, cb;
