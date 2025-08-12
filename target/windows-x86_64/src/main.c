@@ -40,7 +40,7 @@ int display_scaling;
 int display_width;
 int display_height;
 
-extern PBYTE KEYS;
+PBYTE KEYS;
 
 #include "win32ports/time.h"
 long long timeInMilliseconds(void) {
