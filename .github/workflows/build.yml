@@ -10,16 +10,20 @@ jobs:
 
   build-windows:
     name: Build and upload windows artifact
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     strategy:
       matrix:
         include:
           - target: windows-x86_64
-            cc: x86_64-w64-mingw32-gcc
-            cpp: x86_64-w64-mingw32-g++
+            cc: gcc
+            cpp: g++
             bin: stream-companion-win-x64.exe
     steps:
       - uses: actions/checkout@v3
+
+      - shell: bash
+        run: |
+          echo "/c/msys64/mingw64/bin" >> $GITHUB_PATH
 
       - uses: finwo/dep@main
         name: Install dep
@@ -31,7 +35,6 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          sudo apt-get install -yq mingw-w64 zip
           make -j CC=${{ matrix.cc }} CPP=${{ matrix.cpp }} TARGET=${{ matrix.target }}
           cd build
           mv output playground-lvgl
