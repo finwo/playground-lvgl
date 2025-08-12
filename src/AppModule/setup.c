@@ -30,7 +30,6 @@ extern "C" {
 
 #ifdef _WIN32
 // #include <windows.h>
-#include <string.h>
 #else
 // #include <pthread.h>
 // #include <unistd.h>
@@ -54,6 +53,7 @@ extern "C" {
 #include "AppModule/appmodule.h"
 
 #include "util/get_bin_path.h"
+#include "util/strcasecmp.h"
 #include "util/fs.h"
 #include "util/rng.h"
 
