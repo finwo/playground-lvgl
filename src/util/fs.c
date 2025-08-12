@@ -113,22 +113,19 @@ struct buf * file_get_contents(const char *filename) {
 }
 
 bool file_exists(const char *filename, const char *mode) {
+  int m = 0;
 #if defined(_WIN32) || defined(_WIN64)
   // See https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/access-waccess?view=msvc-170
-  int m = 0;
   if (mode && strstr(mode, "r")) m |= 4;
   if (mode && strstr(mode, "w")) m |= 2;
-  if (_access(filename, m)) {
-    return false;
-  }
 #else
-  int m = F_OK;
+  m |= F_OK;
   if (mode && strstr(mode, "r")) m |= R_OK;
   if (mode && strstr(mode, "w")) m |= W_OK;
   if (mode && strstr(mode, "x")) m |= X_OK;
-  if (access(filename, m)) {
+#endif
+  if (access_os(filename, m)) {
     return false;
   }
-#endif
   return true;
 }
