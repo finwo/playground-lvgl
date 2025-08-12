@@ -27,14 +27,14 @@ extern "C" {
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 
 #ifdef _WIN32
 // #include <windows.h>
-#include <strings.h>
+#include <string.h>
 #else
 // #include <pthread.h>
 // #include <unistd.h>
+#include <strings.h>
 #endif
 
 #include "lvgl/lvgl.h"
