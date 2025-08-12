@@ -14,33 +14,29 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-latest
+          - os: ubuntu-latest
             target: windows-x86_64
-            cc: clang
-            cpp: clang++
+            cc: x86_64-w64-mingw32-gcc
+            cpp: x86_64-w64-mingw32-g++
             bin: stream-companion-win-x64.exe
     steps:
       - uses: actions/checkout@v3
-
-      - shell: bash
-        run: |
-          echo "/c/msys64/mingw64/bin" >> $GITHUB_PATH
 
       - uses: finwo/dep@main
         name: Install dep
 
       - name: Install dependencies
-        run: |
-          dep install
         shell: bash
+        run: dep install
 
       - name: Build
+        shell: bash
         run: |
+          sudo apt-get install -yq mingw-w64 zip
           make -j CC=${{ matrix.cc }} CPP=${{ matrix.cpp }} TARGET=${{ matrix.target }}
           cd build
           mv output playground-lvgl
           zip -r playground-lvgl-${{ matrix.target }}.zip playground-lvgl
-        shell: bash
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2

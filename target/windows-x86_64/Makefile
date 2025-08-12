@@ -8,8 +8,8 @@ INCLUDES:=
 UNAME_MACHINE=$(call lc,$(shell uname -m))
 UNAME_SYSTEM=$(call lc,$(shell uname -s))
 
-CC:=clang
-CPP:=clang
+CC:=x86_64-w64-mingw32-gcc
+CPP:=x86_64-w64-mingw32-g++
 
 SRC+=$(wildcard src/*.c)
 SRC+=$(wildcard src/*/*.c)
@@ -24,45 +24,8 @@ override CPPFLAGS?=
 # override CFLAGS+=-D WEBVIEW_STATIC
 # override CFLAGS+=-D WINTERM
 
-ifeq ($(OS),Windows_NT)
-	override CFLAGS += -D WIN32 -D _WIN32
-	# override CPPFLAGS+=-lstdc++
-	ifeq ($(PROCESSOR_ARCHITEW6432),AMD64)
-		override CFLAGS += -D AMD64 -D _WIN64
-	else
-		ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
-			override CFLAGS += -D AMD64 -D _WIN64
-		endif
-		ifeq ($(PROCESSOR_ARCHITECTURE),x86)
-			# CFLAGS += -D IA32
-		endif
-	endif
-else
-	UNAME_S := $(shell uname -s)
-	ifeq ($(UNAME_S),Linux)
-		# CFLAGS += -D LINUX
-		override CPPFLAGS+=-lstdc++
-		override CFLAGS+=$(shell pkg-config --cflags glib-2.0)
-		override LDFLAGS+=$(shell pkg-config --libs glib-2.0)
-		override CFLAGS+=-D _GNU_SOURCE
-	endif
-	ifeq ($(UNAME_S),Darwin)
-		# CFLAGS += -D OSX
-		override CPPFLAGS+=-std=c++14
-		override CFLAGS+=-D _BSD_SOURCE
-	endif
-	UNAME_P := $(shell uname -p)
-	ifeq ($(UNAME_P),x86_64)
-		# CFLAGS += -D AMD64
-	endif
-	ifneq ($(filter %86,$(UNAME_P)),)
-		# CFLAGS += -D IA32
-	endif
-	ifneq ($(filter arm%,$(UNAME_P)),)
-		# CFLAGS += -D ARM
-	endif
-	# TODO: flags for riscv
-endif
+override CFLAGS+=-D WIN32 -D _WIN32
+override CFLAGS+=-D AMD64 -D _WIN64
 
 include lib/.dep/config.mk
 
