@@ -38,7 +38,7 @@ jobs:
           make -j CC=${{ matrix.cc }} CPP=${{ matrix.cpp }} TARGET=${{ matrix.target }}
           cd build
           mv output playground-lvgl
-          zip -r playground-lvgl-${{ matrix.target }}.zip playground-lvgl
+          7z a playground-lvgl-${{ matrix.target }}.zip playground-lvgl
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
