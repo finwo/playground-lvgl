@@ -28,6 +28,7 @@ extern "C" {
 
 #include "util/get_bin_path.h"
 #include "util/fs.h"
+#include "util/time_millis.h"
 
 #include "AppModule/appmodule.h"
 
@@ -41,13 +42,6 @@ int display_width;
 int display_height;
 
 PBYTE KEYS;
-
-#include "win32ports/time.h"
-long long timeInMilliseconds(void) {
-    struct timeval tv;
-    gettimeofday(&tv,NULL);
-    return (((long long)tv.tv_sec)*1000)+(tv.tv_usec/1000);
-}
 
 #if LV_USE_LOG != 0
 static void lv_log_print_g_cb(lv_log_level_t level, const char * buf) {
@@ -196,9 +190,9 @@ int main() {
 
   lv_unlock();
 
-  long long lastTick = timeInMilliseconds();
+  long long lastTick = time_millis();
   while (1) {
-    long long current = timeInMilliseconds();
+    long long current = time_millis();
     appmodule_loop(current - lastTick);
     uint32_t time_till_next = lv_timer_handler();
     if(time_till_next == LV_NO_TIMER_READY) time_till_next = LV_DEF_REFR_PERIOD;
