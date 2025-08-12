@@ -10,7 +10,11 @@
 // extern lfs_t      lfs;
 // extern lfs_file_t file;
 
+#if defined(_WIN32) || defined(_WIN64)
+extern PBYTE KEYS;
+#else
 extern const bool *KEYS;
+#endif
 
 #ifdef _WIN32
 #define APP_KEYCODE_ESCAPE VK_ESCAPE

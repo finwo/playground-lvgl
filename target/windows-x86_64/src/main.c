@@ -40,7 +40,7 @@ int display_scaling;
 int display_width;
 int display_height;
 
-const bool *KEYS;
+extern PBYTE KEYS;
 
 #include "win32ports/time.h"
 long long timeInMilliseconds(void) {
@@ -183,8 +183,8 @@ int main() {
   // Setup keyboard handling
   // No need to update in loop, points to SDL internal array
   // No need to translate keycodes, we're following USB standard just like SDL
-  KEYS = calloc(256, sizeof(PBYTE));
-  if (!GetKeyboardState(&KEYS)) {
+  KEYS = calloc(256, sizeof(BYTE));
+  if (!GetKeyboardState(KEYS)) {
     log_fatal("Could not get initial keyboard state");
     return 1;
   }
