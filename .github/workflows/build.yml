@@ -21,22 +21,23 @@ jobs:
       - uses: actions/checkout@v3
       - uses: finwo/dep@main
         name: Install dep
-      - name: Install dependencies
-        shell: bash
+      - name: Install build dependencies
         run: |
           sudo apt-get update -yq
-          sudo apt-get install -yq build-essential zip
-          dep install
-      - name: Setup quasi-msys2
-        run: |
-          sudo apt-get install -yq make wget tar zstd gawk gpg gpgv wine
-          git clone https://github.com/holyblackcat/quasi-msys2
-          cd quasi-msys2
-          make install _gcc _gdb
+          sudo apt-get install -yq build-essential zip mingw-w64 mingw-w64-tools wget
+          sudo mkdir /usr/local/{i686,x86_64}-w64-mingw32
+          wget https://github.com/libsdl-org/SDL/releases/download/release-2.32.8/SDL2-devel-2.32.8-mingw.tar.gz
+          tar xzvf SDL2-devel-2.32.8-mingw.tar.gz
+          cd SDL2-2.32.8
+          sudo make cross
           cd ..
+
+      - name: Install application dependencies
+        run: |
+          dep install
+
       - name: Build
         run: |
-          source quasi-msys2/env/all.src
           make -j CC=${{ matrix.cc }} CPP=${{ matrix.cpp }} TARGET=${{ matrix.target }}
           cd build
           mv output playground-lvgl
