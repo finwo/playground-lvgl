@@ -11,6 +11,8 @@ UNAME_SYSTEM=$(call lc,$(shell uname -s))
 CC:=x86_64-w64-mingw32-gcc
 CPP:=x86_64-w64-mingw32-g++
 
+INCLUDES+=-I /usr/local/x86_64-w64-mingw32/include
+
 SRC+=$(wildcard src/*.c)
 SRC+=$(wildcard src/*/*.c)
 
