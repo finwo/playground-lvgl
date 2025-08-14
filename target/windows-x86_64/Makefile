@@ -71,6 +71,7 @@ lib/.dep/config.mk:
 
 output/${BIN}: ${OBJ}
 	$(CPP) $(OBJ) $(CPPFLAGS) $(LDFLAGS) -s -o $@
+	cp /usr/local/x86_64-w64-mingw32/bin/SDL2.dll output/SDL2.dll
 
 output/assets: ${includeFiles}
 	for asset in ${includeFiles}; do \
