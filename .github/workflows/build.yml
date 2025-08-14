@@ -8,8 +8,8 @@ on:
 
 jobs:
 
-  cross-windows:
-    name: Cross-compile for windows
+  build-windows:
+    name: Build and upload windows artifact
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -52,45 +52,40 @@ jobs:
           overwrite: true
           tag: ${{ github.ref }}
 
-  build-windows:
-    name: Build and upload windows artifact
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        include:
-          - target: windows-x86_64
-            cc: gcc
-            cpp: g++
-    steps:
-      - uses: actions/checkout@v3
-
-      - shell: bash
-        run: |
-          echo "/c/msys64/mingw64/bin" >> $GITHUB_PATH
-
-      - uses: finwo/dep@main
-        name: Install dep
-
-      - name: Install dependencies
-        shell: bash
-        run: dep install
-
-      - name: Build
-        shell: bash
-        run: |
-          make -j CC=${{ matrix.cc }} CPP=${{ matrix.cpp }} TARGET=${{ matrix.target }}
-          cd build
-          mv output playground-lvgl
-          7z a playground-lvgl-${{ matrix.target }}.zip playground-lvgl
-
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/playground-lvgl-${{ matrix.target }}.zip
-          file_glob: true
-          overwrite: true
-          tag: ${{ github.ref }}
+  # build-windows:
+  #   name: Build and upload windows artifact
+  #   runs-on: windows-latest
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - target: windows-x86_64
+  #           cc: gcc
+  #           cpp: g++
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - shell: bash
+  #       run: |
+  #         echo "/c/msys64/mingw64/bin" >> $GITHUB_PATH
+  #     - uses: finwo/dep@main
+  #       name: Install dep
+  #     - name: Install dependencies
+  #       shell: bash
+  #       run: dep install
+  #     - name: Build
+  #       shell: bash
+  #       run: |
+  #         make -j CC=${{ matrix.cc }} CPP=${{ matrix.cpp }} TARGET=${{ matrix.target }}
+  #         cd build
+  #         mv output playground-lvgl
+  #         7z a playground-lvgl-${{ matrix.target }}.zip playground-lvgl
+  #     - name: Upload binaries to release
+  #       uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
+  #         file: build/playground-lvgl-${{ matrix.target }}.zip
+  #         file_glob: true
+  #         overwrite: true
+  #         tag: ${{ github.ref }}
 
   build-linux:
     name: Build and upload linux artifact
