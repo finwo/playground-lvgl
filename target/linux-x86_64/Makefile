@@ -19,6 +19,7 @@ override CFLAGS+=-I src -DDLV_CONF_INCLUDE_SIMPLE
 override LDFLAGS?=
 override CPPFLAGS?=
 
+override CFLAGS+=$(shell pkg-config --cflags sdl2)
 override LDFLAGS+=$(shell pkg-config --libs sdl2)
 override LDFLAGS+=-lm
 

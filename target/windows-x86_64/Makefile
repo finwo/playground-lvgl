@@ -22,8 +22,8 @@ override CPPFLAGS?=
 
 # override LDFLAGS+=$(shell pkg-config --libs sdl2)
 
-override LDFLAGS+=$(x86_64-w64-mingw32-pkg-config --libs sdl2)
-override CFLAGS+=$(x86_64-w64-mingw32-pkg-config --cflags sdl2)
+override LDFLAGS+=$(shell x86_64-w64-mingw32-pkg-config --libs sdl2)
+override CFLAGS+=$(shell x86_64-w64-mingw32-pkg-config --cflags sdl2)
 
 override LDFLAGS+=-lgdi32
 # override CFLAGS+=-D WEBVIEW_STATIC
