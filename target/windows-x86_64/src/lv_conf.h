@@ -109,7 +109,7 @@
  * - LV_OS_MQX
  * - LV_OS_SDL2
  * - LV_OS_CUSTOM */
-#define LV_USE_OS   LV_OS_WINDOWS
+#define LV_USE_OS   LV_OS_SDL2
 
 #if LV_USE_OS == LV_OS_CUSTOM
     #define LV_OS_CUSTOM_INCLUDE <stdint.h>
@@ -316,7 +316,7 @@
 #define LV_USE_DRAW_DAVE2D 0
 
 /** Draw using cached SDL textures*/
-#define LV_USE_DRAW_SDL 0
+#define LV_USE_DRAW_SDL 1
 
 /** Use VG-Lite GPU. */
 #define LV_USE_DRAW_VG_LITE 0
@@ -1185,7 +1185,7 @@
  *==================*/
 
 /** Use SDL to open window on PC and handle mouse and keyboard. */
-#define LV_USE_SDL              0
+#define LV_USE_SDL              1
 #if LV_USE_SDL
     #define LV_SDL_INCLUDE_PATH     <SDL2/SDL.h>
     #define LV_SDL_RENDER_MODE      LV_DISPLAY_RENDER_MODE_DIRECT   /**< LV_DISPLAY_RENDER_MODE_DIRECT is recommended for best performance */
@@ -1321,7 +1321,7 @@
 #define LV_USE_NXP_ELCDIF   0
 
 /** LVGL Windows backend */
-#define LV_USE_WINDOWS    1
+#define LV_USE_WINDOWS    0
 
 /** LVGL UEFI backend */
 #define LV_USE_UEFI 0
