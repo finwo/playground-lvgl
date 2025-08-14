@@ -77,6 +77,8 @@ ifeq ($(LOG_USE_COLOR),1)
   override CFLAGS+=-DLOG_USE_COLOR
 endif
 
+override CFLAGS+=-DALLOW_UNALIGNED_TRUETYPE
+
 override CFLAGS+=$(INCLUDES)
 override CPPFLAGS+=$(INCLUDES)
 override CPPFLAGS+=$(CFLAGS)
