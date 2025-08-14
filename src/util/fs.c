@@ -18,10 +18,10 @@
 #include "user-none/mkdirp.h"
 
 const char * homedir() {
-  const char *response;
 #if defined(_WIN32) || defined(_WIN64)
   return getenv("USERPROFILE");
 #else
+  const char *response;
   if ((response = getenv("HOME")) == NULL) {
     response = getpwuid(getuid())->pw_dir;
   }
