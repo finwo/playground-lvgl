@@ -23,15 +23,25 @@ jobs:
         name: Install dep
       - name: Install dependencies
         shell: bash
-        run: dep install
-      - name: Build
         run: |
           sudo apt-get update -yq
-          sudo apt-get install -yq build-essential zip mingw-w64
+          sudo apt-get install -yq build-essential zip
+          dep install
+      - name: Setup quasi-msys2
+        run: |
+          sudo apt-get install -yq make wget tar zstd gawk gpg gpgv wine
+          git clone https://github.com/holyblackcat/quasi-msys2
+          cd quasi-msys2
+          make install _gcc _gdb
+          cd ..
+      - name: Build
+        run: |
+          source quasi-msys2/env/all.src
           make -j CC=${{ matrix.cc }} CPP=${{ matrix.cpp }} TARGET=${{ matrix.target }}
           cd build
           mv output playground-lvgl
           zip -r playground-lvgl-${{ matrix.target }}.zip playground-lvgl
+
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
