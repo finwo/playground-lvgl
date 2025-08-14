@@ -11,7 +11,6 @@ UNAME_SYSTEM=$(call lc,$(shell uname -s))
 CC:=x86_64-w64-mingw32-gcc
 CPP:=x86_64-w64-mingw32-g++
 
-INCLUDES+=-I /usr/local/x86_64-w64-mingw32/include
 
 SRC+=$(wildcard src/*.c)
 SRC+=$(wildcard src/*/*.c)
@@ -23,7 +22,10 @@ override CPPFLAGS?=
 
 # override LDFLAGS+=$(shell pkg-config --libs sdl2)
 
-override LDFLAGS+=-lgdi32 -lSDL2
+override LDFLAGS+=$(x86_64-w64-mingw32-pkg-config --libs sdl2)
+override CFLAGS+=$(x86_64-w64-mingw32-pkg-config --cflags sdl2)
+
+override LDFLAGS+=-lgdi32
 # override CFLAGS+=-D WEBVIEW_STATIC
 # override CFLAGS+=-D WINTERM
 
