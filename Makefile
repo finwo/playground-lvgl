@@ -22,9 +22,9 @@ default: build/output/${BIN}
 
 build: ${DEPS}
 	mkdir -p build
-	cp --verbose --force --recursive --preserve=all src build/
-	cp --verbose --force --recursive --preserve=all lib build/
-	cp --verbose --force --recursive --preserve=all target/${TARGET}/* build/
+	cp --force --recursive --preserve=all src build/
+	cp --force --recursive --preserve=all lib build/
+	cp --force --recursive --preserve=all target/${TARGET}/* build/
 
 build/output/${BIN}: build
 	${MAKE} --directory build/ -j
