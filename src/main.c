@@ -219,6 +219,8 @@ int main() {
     return 1;
   }
 
+  SDL_Delay(100);
+
   Uint32 lastTick = SDL_GetTicks();
   while(1) {
     SDL_Delay(5);
